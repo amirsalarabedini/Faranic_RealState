@@ -76,7 +76,7 @@ class Configuration:
             for f in fields(cls)
             if f.init
         }
-        return cls(**{k: v for k, v in values.items() if v})
+        return cls(**values)
 
     def copy(self):
         """Return a deep copy of this configuration."""

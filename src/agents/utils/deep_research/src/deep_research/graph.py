@@ -4,12 +4,14 @@ import os
 import sys
 from dotenv import load_dotenv
 
-load_dotenv()
-
 # Add the project root to Python path to enable proper imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../../'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+
+# Load environment variables from .env file in the project root
+dotenv_path = os.path.join(project_root, '.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 # Add the current directory to Python path to import local open_deep_research modules
 current_dir = os.path.dirname(__file__)
@@ -29,7 +31,7 @@ from langgraph.constants import Send
 from langgraph.graph import START, END, StateGraph
 from langgraph.types import interrupt, Command
 
-from state import (
+from .state import (
     ReportStateInput,
     ReportStateOutput,
     Sections,
@@ -39,7 +41,7 @@ from state import (
     Queries,
     Feedback
 )
-from prompts import (
+from .prompts import (
     report_planner_query_writer_instructions,
     report_planner_instructions,
     query_writer_instructions, 
@@ -48,8 +50,8 @@ from prompts import (
     section_grader_instructions,
     section_writer_inputs
 )
-from configuration import Configuration
-from utils import (
+from .configuration import Configuration
+from .utils import (
     format_sections, 
     get_config_value, 
     get_search_params, 

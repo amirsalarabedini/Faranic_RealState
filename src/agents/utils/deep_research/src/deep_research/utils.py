@@ -32,8 +32,8 @@ from langchain_core.tools import tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langsmith import traceable
 
-from open_deep_research.configuration import Configuration
-from open_deep_research.state import Section
+from .configuration import Configuration
+from .state import Section
 
 
 def get_config_value(value):
