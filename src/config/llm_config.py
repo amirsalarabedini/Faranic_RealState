@@ -10,10 +10,13 @@ load_dotenv()
 # LLM Provider Configuration
 LLM_PROVIDERS = {
     "openai": {
-        "base_url": "https://api.metisai.ir/openai/v1",
+        "base_url": "https://openrouter.ai/api/v1",
         "class": ChatOpenAI,
         "models": {
-            "gpt-4o-mini": {"api_key_env": "OPENAI_API_KEY"}
+            "gpt-4o-mini": {"api_key_env": "OPENAI_API_KEY"},
+            "gpt-4.1-mini": {"api_key_env": "OPENAI_API_KEY"},
+            "gpt-4o": {"api_key_env": "OPENAI_API_KEY"},
+            "gpt-4.1": {"api_key_env": "OPENAI_API_KEY"}
         }
     },
     "gemini": {
@@ -30,9 +33,9 @@ LLM_PROVIDERS = {
 
 # Default configuration - can be overridden by environment variables
 DEFAULT_CONFIG = {
-    "base_url": "https://api.metisai.ir/openai/v1",
+    "base_url": "https://openrouter.ai/api/v1",
     "provider": os.getenv("LLM_PROVIDER", "openai"),
-    "model": os.getenv("LLM_MODEL", "gpt-4o-mini"),
+    "model": os.getenv("LLM_MODEL", "gpt-4.1-mini"),
     "temperature": float(os.getenv("LLM_TEMPERATURE", "0.1"))
 }
 

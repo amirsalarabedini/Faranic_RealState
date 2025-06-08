@@ -15,11 +15,7 @@ from collections import defaultdict
 import itertools
 
 from exa_py import Exa
-from linkup import LinkupClient
 from tavily import AsyncTavilyClient
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.aio import SearchClient as AsyncAzureAISearchClient
-from duckduckgo_search import DDGS 
 from bs4 import BeautifulSoup
 from markdownify import markdownify
 from pydantic import BaseModel
@@ -32,15 +28,12 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_community.retrievers import ArxivRetriever
-from langchain_community.utilities.pubmed import PubMedAPIWrapper
 from langchain_core.tools import tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langsmith import traceable
 
 from open_deep_research.configuration import Configuration
 from open_deep_research.state import Section
-from open_deep_research.prompts import SUMMARIZATION_PROMPT
 
 
 def get_config_value(value):
@@ -70,9 +63,6 @@ def get_search_params(search_api: str, search_api_config: Optional[Dict[str, Any
         "exa": ["max_characters", "num_results", "include_domains", "exclude_domains", "subpages"],
         "tavily": ["max_results", "topic"],
         "perplexity": [],  # Perplexity accepts no additional parameters
-        "arxiv": ["load_max_docs", "get_full_documents", "load_all_available_meta"],
-        "pubmed": ["top_k_results", "email", "api_key", "doc_content_chars_max"],
-        "linkup": ["depth"],
         "googlesearch": ["max_results"],
     }
 
@@ -213,161 +203,6 @@ async def tavily_search_async(search_queries, max_results: int = 5, topic: Liter
 
     # Execute all searches concurrently
     search_docs = await asyncio.gather(*search_tasks)
-    return search_docs
-
-@traceable
-async def azureaisearch_search_async(search_queries: list[str], max_results: int = 5, topic: str = "general", include_raw_content: bool = True) -> list[dict]:
-    """
-    Performs concurrent web searches using the Azure AI Search API.
-
-    Args:
-        search_queries (List[str]): list of search queries to process
-        max_results (int): maximum number of results to return for each query
-        topic (str): semantic topic filter for the search.
-        include_raw_content (bool)
-
-    Returns:
-        List[dict]: list of search responses from Azure AI Search API, one per query.
-    """
-    # configure and create the Azure Search client
-    # ensure all environment variables are set
-    if not all(var in os.environ for var in ["AZURE_AI_SEARCH_ENDPOINT", "AZURE_AI_SEARCH_INDEX_NAME", "AZURE_AI_SEARCH_API_KEY"]):
-        raise ValueError("Missing required environment variables for Azure Search API which are: AZURE_AI_SEARCH_ENDPOINT, AZURE_AI_SEARCH_INDEX_NAME, AZURE_AI_SEARCH_API_KEY")
-    endpoint = os.getenv("AZURE_AI_SEARCH_ENDPOINT")
-    index_name = os.getenv("AZURE_AI_SEARCH_INDEX_NAME")
-    credential = AzureKeyCredential(os.getenv("AZURE_AI_SEARCH_API_KEY"))
-
-    reranker_key = '@search.reranker_score'
-
-    async with AsyncAzureAISearchClient(endpoint, index_name, credential) as client:
-        async def do_search(query: str) -> dict:
-            # search query 
-            paged = await client.search(
-                search_text=query,
-                vector_queries=[{
-                    "fields": "vector",
-                    "kind": "text",
-                    "text": query,
-                    "exhaustive": True
-                }],
-                semantic_configuration_name="fraunhofer-rag-semantic-config",
-                query_type="semantic",
-                select=["url", "title", "chunk", "creationTime", "lastModifiedTime"],
-                top=max_results,
-            )
-            # async iterator to get all results
-            items = [doc async for doc in paged]
-            # Umwandlung in einfaches Dict-Format
-            results = [
-                {
-                    "title": doc.get("title"),
-                    "url": doc.get("url"),
-                    "content": doc.get("chunk"),
-                    "score": doc.get(reranker_key),
-                    "raw_content": doc.get("chunk") if include_raw_content else None
-                }
-                for doc in items
-            ]
-            return {"query": query, "results": results}
-
-        # parallelize the search queries
-        tasks = [do_search(q) for q in search_queries]
-        return await asyncio.gather(*tasks)
-
-
-@traceable
-def perplexity_search(search_queries):
-    """Search the web using the Perplexity API.
-    
-    Args:
-        search_queries (List[SearchQuery]): List of search queries to process
-  
-    Returns:
-        List[dict]: List of search responses from Perplexity API, one per query. Each response has format:
-            {
-                'query': str,                    # The original search query
-                'follow_up_questions': None,      
-                'answer': None,
-                'images': list,
-                'results': [                     # List of search results
-                    {
-                        'title': str,            # Title of the search result
-                        'url': str,              # URL of the result
-                        'content': str,          # Summary/snippet of content
-                        'score': float,          # Relevance score
-                        'raw_content': str|None  # Full content or None for secondary citations
-                    },
-                    ...
-                ]
-            }
-    """
-
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "Authorization": f"Bearer {os.getenv('PERPLEXITY_API_KEY')}"
-    }
-    
-    search_docs = []
-    for query in search_queries:
-
-        payload = {
-            "model": "sonar-pro",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "Search the web and provide factual information with sources."
-                },
-                {
-                    "role": "user",
-                    "content": query
-                }
-            ]
-        }
-        
-        response = requests.post(
-            "https://api.perplexity.ai/chat/completions",
-            headers=headers,
-            json=payload
-        )
-        response.raise_for_status()  # Raise exception for bad status codes
-        
-        # Parse the response
-        data = response.json()
-        content = data["choices"][0]["message"]["content"]
-        citations = data.get("citations", ["https://perplexity.ai"])
-        
-        # Create results list for this query
-        results = []
-        
-        # First citation gets the full content
-        results.append({
-            "title": f"Perplexity Search, Source 1",
-            "url": citations[0],
-            "content": content,
-            "raw_content": content,
-            "score": 1.0  # Adding score to match Tavily format
-        })
-        
-        # Add additional citations without duplicating content
-        for i, citation in enumerate(citations[1:], start=2):
-            results.append({
-                "title": f"Perplexity Search, Source {i}",
-                "url": citation,
-                "content": "See primary source for full content",
-                "raw_content": None,
-                "score": 0.5  # Lower score for secondary sources
-            })
-        
-        # Format response to match Tavily structure
-        search_docs.append({
-            "query": query,
-            "follow_up_questions": None,
-            "answer": None,
-            "images": [],
-            "results": results
-        })
-    
     return search_docs
 
 @traceable
@@ -572,357 +407,6 @@ async def exa_search(search_queries, max_characters: Optional[int] = None, num_r
                 await asyncio.sleep(1.0)  # Add a longer delay if we hit a rate limit
     
     return search_docs
-
-@traceable
-async def arxiv_search_async(search_queries, load_max_docs=5, get_full_documents=True, load_all_available_meta=True):
-    """
-    Performs concurrent searches on arXiv using the ArxivRetriever.
-
-    Args:
-        search_queries (List[str]): List of search queries or article IDs
-        load_max_docs (int, optional): Maximum number of documents to return per query. Default is 5.
-        get_full_documents (bool, optional): Whether to fetch full text of documents. Default is True.
-        load_all_available_meta (bool, optional): Whether to load all available metadata. Default is True.
-
-    Returns:
-        List[dict]: List of search responses from arXiv, one per query. Each response has format:
-            {
-                'query': str,                    # The original search query
-                'follow_up_questions': None,      
-                'answer': None,
-                'images': [],
-                'results': [                     # List of search results
-                    {
-                        'title': str,            # Title of the paper
-                        'url': str,              # URL (Entry ID) of the paper
-                        'content': str,          # Formatted summary with metadata
-                        'score': float,          # Relevance score (approximated)
-                        'raw_content': str|None  # Full paper content if available
-                    },
-                    ...
-                ]
-            }
-    """
-    
-    async def process_single_query(query):
-        try:
-            # Create retriever for each query
-            retriever = ArxivRetriever(
-                load_max_docs=load_max_docs,
-                get_full_documents=get_full_documents,
-                load_all_available_meta=load_all_available_meta
-            )
-            
-            # Run the synchronous retriever in a thread pool
-            loop = asyncio.get_event_loop()
-            docs = await loop.run_in_executor(None, lambda: retriever.invoke(query))
-            
-            results = []
-            # Assign decreasing scores based on the order
-            base_score = 1.0
-            score_decrement = 1.0 / (len(docs) + 1) if docs else 0
-            
-            for i, doc in enumerate(docs):
-                # Extract metadata
-                metadata = doc.metadata
-                
-                # Use entry_id as the URL (this is the actual arxiv link)
-                url = metadata.get('entry_id', '')
-                
-                # Format content with all useful metadata
-                content_parts = []
-
-                # Primary information
-                if 'Summary' in metadata:
-                    content_parts.append(f"Summary: {metadata['Summary']}")
-
-                if 'Authors' in metadata:
-                    content_parts.append(f"Authors: {metadata['Authors']}")
-
-                # Add publication information
-                published = metadata.get('Published')
-                published_str = published.isoformat() if hasattr(published, 'isoformat') else str(published) if published else ''
-                if published_str:
-                    content_parts.append(f"Published: {published_str}")
-
-                # Add additional metadata if available
-                if 'primary_category' in metadata:
-                    content_parts.append(f"Primary Category: {metadata['primary_category']}")
-
-                if 'categories' in metadata and metadata['categories']:
-                    content_parts.append(f"Categories: {', '.join(metadata['categories'])}")
-
-                if 'comment' in metadata and metadata['comment']:
-                    content_parts.append(f"Comment: {metadata['comment']}")
-
-                if 'journal_ref' in metadata and metadata['journal_ref']:
-                    content_parts.append(f"Journal Reference: {metadata['journal_ref']}")
-
-                if 'doi' in metadata and metadata['doi']:
-                    content_parts.append(f"DOI: {metadata['doi']}")
-
-                # Get PDF link if available in the links
-                pdf_link = ""
-                if 'links' in metadata and metadata['links']:
-                    for link in metadata['links']:
-                        if 'pdf' in link:
-                            pdf_link = link
-                            content_parts.append(f"PDF: {pdf_link}")
-                            break
-
-                # Join all content parts with newlines 
-                content = "\n".join(content_parts)
-                
-                result = {
-                    'title': metadata.get('Title', ''),
-                    'url': url,  # Using entry_id as the URL
-                    'content': content,
-                    'score': base_score - (i * score_decrement),
-                    'raw_content': doc.page_content if get_full_documents else None
-                }
-                results.append(result)
-                
-            return {
-                'query': query,
-                'follow_up_questions': None,
-                'answer': None,
-                'images': [],
-                'results': results
-            }
-        except Exception as e:
-            # Handle exceptions gracefully
-            print(f"Error processing arXiv query '{query}': {str(e)}")
-            return {
-                'query': query,
-                'follow_up_questions': None,
-                'answer': None,
-                'images': [],
-                'results': [],
-                'error': str(e)
-            }
-    
-    # Process queries sequentially with delay to respect arXiv rate limit (1 request per 3 seconds)
-    search_docs = []
-    for i, query in enumerate(search_queries):
-        try:
-            # Add delay between requests (3 seconds per ArXiv's rate limit)
-            if i > 0:  # Don't delay the first request
-                await asyncio.sleep(3.0)
-            
-            result = await process_single_query(query)
-            search_docs.append(result)
-        except Exception as e:
-            # Handle exceptions gracefully
-            print(f"Error processing arXiv query '{query}': {str(e)}")
-            search_docs.append({
-                'query': query,
-                'follow_up_questions': None,
-                'answer': None,
-                'images': [],
-                'results': [],
-                'error': str(e)
-            })
-            
-            # Add additional delay if we hit a rate limit error
-            if "429" in str(e) or "Too Many Requests" in str(e):
-                print("ArXiv rate limit exceeded. Adding additional delay...")
-                await asyncio.sleep(5.0)  # Add a longer delay if we hit a rate limit
-    
-    return search_docs
-
-@traceable
-async def pubmed_search_async(search_queries, top_k_results=5, email=None, api_key=None, doc_content_chars_max=4000):
-    """
-    Performs concurrent searches on PubMed using the PubMedAPIWrapper.
-
-    Args:
-        search_queries (List[str]): List of search queries
-        top_k_results (int, optional): Maximum number of documents to return per query. Default is 5.
-        email (str, optional): Email address for PubMed API. Required by NCBI.
-        api_key (str, optional): API key for PubMed API for higher rate limits.
-        doc_content_chars_max (int, optional): Maximum characters for document content. Default is 4000.
-
-    Returns:
-        List[dict]: List of search responses from PubMed, one per query. Each response has format:
-            {
-                'query': str,                    # The original search query
-                'follow_up_questions': None,      
-                'answer': None,
-                'images': [],
-                'results': [                     # List of search results
-                    {
-                        'title': str,            # Title of the paper
-                        'url': str,              # URL to the paper on PubMed
-                        'content': str,          # Formatted summary with metadata
-                        'score': float,          # Relevance score (approximated)
-                        'raw_content': str       # Full abstract content
-                    },
-                    ...
-                ]
-            }
-    """
-    
-    async def process_single_query(query):
-        try:
-            # print(f"Processing PubMed query: '{query}'")
-            
-            # Create PubMed wrapper for the query
-            wrapper = PubMedAPIWrapper(
-                top_k_results=top_k_results,
-                doc_content_chars_max=doc_content_chars_max,
-                email=email if email else "your_email@example.com",
-                api_key=api_key if api_key else ""
-            )
-            
-            # Run the synchronous wrapper in a thread pool
-            loop = asyncio.get_event_loop()
-            
-            # Use wrapper.lazy_load instead of load to get better visibility
-            docs = await loop.run_in_executor(None, lambda: list(wrapper.lazy_load(query)))
-            
-            print(f"Query '{query}' returned {len(docs)} results")
-            
-            results = []
-            # Assign decreasing scores based on the order
-            base_score = 1.0
-            score_decrement = 1.0 / (len(docs) + 1) if docs else 0
-            
-            for i, doc in enumerate(docs):
-                # Format content with metadata
-                content_parts = []
-                
-                if doc.get('Published'):
-                    content_parts.append(f"Published: {doc['Published']}")
-                
-                if doc.get('Copyright Information'):
-                    content_parts.append(f"Copyright Information: {doc['Copyright Information']}")
-                
-                if doc.get('Summary'):
-                    content_parts.append(f"Summary: {doc['Summary']}")
-                
-                # Generate PubMed URL from the article UID
-                uid = doc.get('uid', '')
-                url = f"https://pubmed.ncbi.nlm.nih.gov/{uid}/" if uid else ""
-                
-                # Join all content parts with newlines
-                content = "\n".join(content_parts)
-                
-                result = {
-                    'title': doc.get('Title', ''),
-                    'url': url,
-                    'content': content,
-                    'score': base_score - (i * score_decrement),
-                    'raw_content': doc.get('Summary', '')
-                }
-                results.append(result)
-            
-            return {
-                'query': query,
-                'follow_up_questions': None,
-                'answer': None,
-                'images': [],
-                'results': results
-            }
-        except Exception as e:
-            # Handle exceptions with more detailed information
-            error_msg = f"Error processing PubMed query '{query}': {str(e)}"
-            print(error_msg)
-            import traceback
-            print(traceback.format_exc())  # Print full traceback for debugging
-            
-            return {
-                'query': query,
-                'follow_up_questions': None,
-                'answer': None,
-                'images': [],
-                'results': [],
-                'error': str(e)
-            }
-    
-    # Process all queries with a reasonable delay between them
-    search_docs = []
-    
-    # Start with a small delay that increases if we encounter rate limiting
-    delay = 1.0  # Start with a more conservative delay
-    
-    for i, query in enumerate(search_queries):
-        try:
-            # Add delay between requests
-            if i > 0:  # Don't delay the first request
-                # print(f"Waiting {delay} seconds before next query...")
-                await asyncio.sleep(delay)
-            
-            result = await process_single_query(query)
-            search_docs.append(result)
-            
-            # If query was successful with results, we can slightly reduce delay (but not below minimum)
-            if result.get('results') and len(result['results']) > 0:
-                delay = max(0.5, delay * 0.9)  # Don't go below 0.5 seconds
-            
-        except Exception as e:
-            # Handle exceptions gracefully
-            error_msg = f"Error in main loop processing PubMed query '{query}': {str(e)}"
-            print(error_msg)
-            
-            search_docs.append({
-                'query': query,
-                'follow_up_questions': None,
-                'answer': None,
-                'images': [],
-                'results': [],
-                'error': str(e)
-            })
-            
-            # If we hit an exception, increase delay for next query
-            delay = min(5.0, delay * 1.5)  # Don't exceed 5 seconds
-    
-    return search_docs
-
-@traceable
-async def linkup_search(search_queries, depth: Optional[str] = "standard"):
-    """
-    Performs concurrent web searches using the Linkup API.
-
-    Args:
-        search_queries (List[SearchQuery]): List of search queries to process
-        depth (str, optional): "standard" (default)  or "deep". More details here https://docs.linkup.so/pages/documentation/get-started/concepts
-
-    Returns:
-        List[dict]: List of search responses from Linkup API, one per query. Each response has format:
-            {
-                'results': [            # List of search results
-                    {
-                        'title': str,   # Title of the search result
-                        'url': str,     # URL of the result
-                        'content': str, # Summary/snippet of content
-                    },
-                    ...
-                ]
-            }
-    """
-    client = LinkupClient()
-    search_tasks = []
-    for query in search_queries:
-        search_tasks.append(
-                client.async_search(
-                    query,
-                    depth,
-                    output_type="searchResults",
-                )
-            )
-
-    search_results = []
-    for response in await asyncio.gather(*search_tasks):
-        search_results.append(
-            {
-                "results": [
-                    {"title": result.name, "url": result.url, "content": result.content}
-                    for result in response.results
-                ],
-            }
-        )
-
-    return search_results
 
 @traceable
 async def google_search_async(search_queries: Union[str, List[str]], max_results: int = 5, include_raw_content: bool = True):
@@ -1244,116 +728,100 @@ async def scrape_pages(titles: List[str], urls: List[str]) -> str:
         
     return formatted_output
 
-@tool
-async def duckduckgo_search(search_queries: List[str]):
-    """Perform searches using DuckDuckGo with retry logic to handle rate limits
+@traceable
+def perplexity_search(search_queries):
+    """Search the web using the Perplexity API.
     
     Args:
-        search_queries (List[str]): List of search queries to process
-        
+        search_queries (List[SearchQuery]): List of search queries to process
+  
     Returns:
-        str: A formatted string of search results
-    """
-    
-    async def process_single_query(query):
-        # Execute synchronous search in the event loop's thread pool
-        loop = asyncio.get_event_loop()
-        
-        def perform_search():
-            max_retries = 3
-            retry_count = 0
-            backoff_factor = 2.0
-            last_exception = None
-            
-            while retry_count <= max_retries:
-                try:
-                    results = []
-                    with DDGS() as ddgs:
-                        # Change query slightly and add delay between retries
-                        if retry_count > 0:
-                            # Random delay with exponential backoff
-                            delay = backoff_factor ** retry_count + random.random()
-                            print(f"Retry {retry_count}/{max_retries} for query '{query}' after {delay:.2f}s delay")
-                            time.sleep(delay)
-                            
-                            # Add a random element to the query to bypass caching/rate limits
-                            modifiers = ['about', 'info', 'guide', 'overview', 'details', 'explained']
-                            modified_query = f"{query} {random.choice(modifiers)}"
-                        else:
-                            modified_query = query
-                        
-                        # Execute search
-                        ddg_results = list(ddgs.text(modified_query, max_results=5))
-                        
-                        # Format results
-                        for i, result in enumerate(ddg_results):
-                            results.append({
-                                'title': result.get('title', ''),
-                                'url': result.get('href', ''),
-                                'content': result.get('body', ''),
-                                'score': 1.0 - (i * 0.1),  # Simple scoring mechanism
-                                'raw_content': result.get('body', '')
-                            })
-                        
-                        # Return successful results
-                        return {
-                            'query': query,
-                            'follow_up_questions': None,
-                            'answer': None,
-                            'images': [],
-                            'results': results
-                        }
-                except Exception as e:
-                    # Store the exception and retry
-                    last_exception = e
-                    retry_count += 1
-                    print(f"DuckDuckGo search error: {str(e)}. Retrying {retry_count}/{max_retries}")
-                    
-                    # If not a rate limit error, don't retry
-                    if "Ratelimit" not in str(e) and retry_count >= 1:
-                        print(f"Non-rate limit error, stopping retries: {str(e)}")
-                        break
-            
-            # If we reach here, all retries failed
-            print(f"All retries failed for query '{query}': {str(last_exception)}")
-            # Return empty results but with query info preserved
-            return {
-                'query': query,
-                'follow_up_questions': None,
+        List[dict]: List of search responses from Perplexity API, one per query. Each response has format:
+            {
+                'query': str,                    # The original search query
+                'follow_up_questions': None,      
                 'answer': None,
-                'images': [],
-                'results': [],
-                'error': str(last_exception)
+                'images': list,
+                'results': [                     # List of search results
+                    {
+                        'title': str,            # Title of the search result
+                        'url': str,              # URL of the result
+                        'content': str,          # Summary/snippet of content
+                        'score': float,          # Relevance score
+                        'raw_content': str|None  # Full content or None for secondary citations
+                    },
+                    ...
+                ]
             }
-            
-        return await loop.run_in_executor(None, perform_search)
+    """
 
-    # Process queries with delay between them to reduce rate limiting
-    search_docs = []
-    urls = []
-    titles = []
-    for i, query in enumerate(search_queries):
-        # Add delay between queries (except first one)
-        if i > 0:
-            delay = 2.0 + random.random() * 2.0  # Random delay 2-4 seconds
-            await asyncio.sleep(delay)
-        
-        # Process the query
-        result = await process_single_query(query)
-        search_docs.append(result)
-        
-        # Safely extract URLs and titles from results, handling empty result cases
-        if result['results'] and len(result['results']) > 0:
-            for res in result['results']:
-                if 'url' in res and 'title' in res:
-                    urls.append(res['url'])
-                    titles.append(res['title'])
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "Authorization": f"Bearer {os.getenv('PERPLEXITY_API_KEY')}"
+    }
     
-    # If we got any valid URLs, scrape the pages
-    if urls:
-        return await scrape_pages(titles, urls)
-    else:
-        return "No valid search results found. Please try different search queries or use a different search API."
+    search_docs = []
+    for query in search_queries:
+
+        payload = {
+            "model": "sonar-pro",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Search the web and provide factual information with sources."
+                },
+                {
+                    "role": "user",
+                    "content": query
+                }
+            ]
+        }
+        
+        response = requests.post(
+            "https://api.perplexity.ai/chat/completions",
+            headers=headers,
+            json=payload
+        )
+        response.raise_for_status()  # Raise exception for bad status codes
+        
+        # Parse the response
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        citations = data.get("citations", ["https://perplexity.ai"])
+        
+        # Create results list for this query
+        results = []
+        
+        # First citation gets the full content
+        results.append({
+            "title": f"Perplexity Search, Source 1",
+            "url": citations[0],
+            "content": content,
+            "raw_content": content,
+            "score": 1.0  # Adding score to match Tavily format
+        })
+        
+        # Add additional citations without duplicating content
+        for i, citation in enumerate(citations[1:], start=2):
+            results.append({
+                "title": f"Perplexity Search, Source {i}",
+                "url": citation,
+                "content": "See primary source for full content",
+                "raw_content": None,
+                "score": 0.5  # Lower score for secondary sources
+            })
+        
+        # Format response to match Tavily structure
+        search_docs.append({
+            "query": query,
+            "follow_up_questions": None,
+            "answer": None,
+            "images": [],
+            "results": results
+        })
+    
+    return search_docs
 
 TAVILY_SEARCH_DESCRIPTION = (
     "A search engine optimized for comprehensive, accurate, and trusted results. "
@@ -1452,51 +920,6 @@ async def tavily_search(
         return "No valid search results found. Please try different search queries or use a different search API."
 
 
-@tool
-async def azureaisearch_search(queries: List[str], max_results: int = 5, topic: str = "general") -> str:
-    """
-    Fetches results from Azure AI Search API.
-    
-    Args:
-        queries (List[str]): List of search queries
-        
-    Returns:
-        str: A formatted string of search results
-    """
-    # Use azureaisearch_search_async with include_raw_content=True to get content directly
-    search_results = await azureaisearch_search_async(
-        queries,
-        max_results=max_results,
-        topic=topic,
-        include_raw_content=True
-    )
-
-    # Format the search results directly using the raw_content already provided
-    formatted_output = f"Search results: \n\n"
-    
-    # Deduplicate results by URL
-    unique_results = {}
-    for response in search_results:
-        for result in response['results']:
-            url = result['url']
-            if url not in unique_results:
-                unique_results[url] = result
-    
-    # Format the unique results
-    for i, (url, result) in enumerate(unique_results.items()):
-        formatted_output += f"\n\n--- SOURCE {i+1}: {result['title']} ---\n"
-        formatted_output += f"URL: {url}\n\n"
-        formatted_output += f"SUMMARY:\n{result['content']}\n\n"
-        if result.get('raw_content'):
-            formatted_output += f"FULL CONTENT:\n{result['raw_content'][:30000]}"  # Limit content size
-        formatted_output += "\n\n" + "-" * 80 + "\n"
-    
-    if unique_results:
-        return formatted_output
-    else:
-        return "No valid search results found. Please try different search queries or use a different search API."
-
-
 async def select_and_execute_search(search_api: str, query_list: list[str], params_to_pass: dict) -> str:
     """Select and execute the appropriate search API.
     
@@ -1515,23 +938,12 @@ async def select_and_execute_search(search_api: str, query_list: list[str], para
         # Tavily search tool used with both workflow and agent 
         # and returns a formatted source string
         return await tavily_search.ainvoke({'queries': query_list, **params_to_pass})
-    elif search_api == "duckduckgo":
-        # DuckDuckGo search tool used with both workflow and agent 
-        return await duckduckgo_search.ainvoke({'search_queries': query_list})
     elif search_api == "perplexity":
-        search_results = perplexity_search(query_list, **params_to_pass)
+        search_results = perplexity_search(query_list)
     elif search_api == "exa":
         search_results = await exa_search(query_list, **params_to_pass)
-    elif search_api == "arxiv":
-        search_results = await arxiv_search_async(query_list, **params_to_pass)
-    elif search_api == "pubmed":
-        search_results = await pubmed_search_async(query_list, **params_to_pass)
-    elif search_api == "linkup":
-        search_results = await linkup_search(query_list, **params_to_pass)
     elif search_api == "googlesearch":
         search_results = await google_search_async(query_list, **params_to_pass)
-    elif search_api == "azureaisearch":
-        search_results = await azureaisearch_search_async(query_list, **params_to_pass)
     else:
         raise ValueError(f"Unsupported search API: {search_api}")
 
@@ -1541,32 +953,6 @@ async def select_and_execute_search(search_api: str, query_list: list[str], para
 class Summary(BaseModel):
     summary: str
     key_excerpts: list[str]
-
-
-async def summarize_webpage(model: BaseChatModel, webpage_content: str) -> str:
-    """Summarize webpage content."""
-    try:
-        user_input_content = "Please summarize the article"
-        if isinstance(model, ChatAnthropic):
-            user_input_content = [{
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"}
-            }]
-
-        summary = await model.with_structured_output(Summary).with_retry(stop_after_attempt=2).ainvoke([
-            {"role": "system", "content": SUMMARIZATION_PROMPT.format(webpage_content=webpage_content)},
-            {"role": "user", "content": user_input_content},
-        ])
-    except:
-        # fall back on the raw content
-        return webpage_content
-
-    def format_summary(summary: Summary):
-        excerpts_str = "\n".join(f'- {e}' for e in summary.key_excerpts)
-        return f"""<summary>\n{summary.summary}\n</summary>\n\n<key_excerpts>\n{excerpts_str}\n</key_excerpts>"""
-
-    return format_summary(summary)
 
 
 def split_and_rerank_search_results(embeddings: Embeddings, query: str, search_results: list[dict], max_chunks: int = 5):
@@ -1621,14 +1007,3 @@ def get_today_str() -> str:
     """Get current date in a human-readable format."""
     return datetime.datetime.now().strftime("%a %b %-d, %Y")
 
-
-async def load_mcp_server_config(path: str) -> dict:
-    """Load MCP server configuration from a file."""
-
-    def _load():
-        with open(path, "r") as f:
-            config = json.load(f)
-        return config
-
-    config = await asyncio.to_thread(_load)
-    return config

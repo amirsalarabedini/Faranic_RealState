@@ -1,7 +1,8 @@
 import os
 from enum import Enum
-from dataclasses import dataclass, fields, field
+from dataclasses import dataclass, fields, field, asdict
 from typing import Any, Optional, Dict, Literal
+import copy
 
 from langchain_core.runnables import RunnableConfig
 
@@ -21,12 +22,7 @@ class SearchAPI(Enum):
     PERPLEXITY = "perplexity"
     TAVILY = "tavily"
     EXA = "exa"
-    ARXIV = "arxiv"
-    PUBMED = "pubmed"
-    LINKUP = "linkup"
-    DUCKDUCKGO = "duckduckgo"
     GOOGLESEARCH = "googlesearch"
-    NONE = "none"
 
 @dataclass(kw_only=True)
 class Configuration:
@@ -38,8 +34,8 @@ class Configuration:
     process_search_results: Literal["summarize", "split_and_rerank"] | None = None
     # Summarization model for summarizing search results
     # will be used if summarize_search_results is True
-    summarization_model_provider: str = "anthropic"
-    summarization_model: str = "claude-3-5-haiku-latest"
+    summarization_model_provider: str = "openai"
+    summarization_model: str = "gpt-4o-mini"
     # Whether to include search results string in the agent output state
     # This is used for evaluation purposes only
     include_source_str: bool = False
@@ -47,11 +43,11 @@ class Configuration:
     # Graph-specific configuration
     number_of_queries: int = 2 # Number of search queries to generate per iteration
     max_search_depth: int = 2 # Maximum number of reflection + search iterations
-    planner_provider: str = "anthropic"  # Defaults to Anthropic as provider
-    planner_model: str = "claude-3-7-sonnet-latest" # Defaults to claude-3-7-sonnet-latest
+    planner_provider: str = "openai"  # Defaults to Anthropic as provider
+    planner_model: str = "gpt-4o-mini" # Defaults to claude-3-7-sonnet-latest
     planner_model_kwargs: Optional[Dict[str, Any]] = None # kwargs for planner_model
-    writer_provider: str = "anthropic" # Defaults to Anthropic as provider
-    writer_model: str = "claude-3-5-sonnet-latest" # Defaults to claude-3-5-sonnet-latest
+    writer_provider: str = "openai" # Defaults to Anthropic as provider
+    writer_model: str = "gpt-4o-mini" # Defaults to claude-3-5-sonnet-latest
     writer_model_kwargs: Optional[Dict[str, Any]] = None # kwargs for writer_model
     
     # Multi-agent specific configuration
@@ -81,3 +77,35 @@ class Configuration:
             if f.init
         }
         return cls(**{k: v for k, v in values.items() if v})
+
+    def copy(self):
+        """Return a deep copy of this configuration."""
+        return copy.deepcopy(self)
+    
+    def items(self):
+        """Return items as (key, value) pairs like a dictionary."""
+        return asdict(self).items()
+    
+    def keys(self):
+        """Return keys like a dictionary."""
+        return asdict(self).keys()
+    
+    def values(self):
+        """Return values like a dictionary."""
+        return asdict(self).values()
+    
+    def get(self, key, default=None):
+        """Get a value by key, with optional default."""
+        return getattr(self, key, default)
+    
+    def __getitem__(self, key):
+        """Allow dictionary-style access."""
+        return getattr(self, key)
+    
+    def __setitem__(self, key, value):
+        """Allow dictionary-style assignment."""
+        setattr(self, key, value)
+    
+    def __contains__(self, key):
+        """Check if key exists."""
+        return hasattr(self, key)

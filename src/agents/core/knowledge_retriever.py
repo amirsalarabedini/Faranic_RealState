@@ -2,7 +2,6 @@ from langsmith import traceable
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain.tools.retriever import create_retriever_tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chat_models import init_chat_model
 from langgraph.graph import MessagesState
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from typing import Dict, Any, List
@@ -265,4 +264,4 @@ def get_knowledge_retriever() -> KnowledgeRetriever:
     global _knowledge_retriever
     if _knowledge_retriever is None:
         _knowledge_retriever = KnowledgeRetriever()
-    return _knowledge_retriever 
+    return _knowledge_retriever

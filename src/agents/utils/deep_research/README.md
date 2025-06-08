@@ -92,12 +92,7 @@ Available search tools:
 * [Tavily API](https://tavily.com/) - General web search
 * [Perplexity API](https://www.perplexity.ai/hub/blog/introducing-the-sonar-pro-api) - General web search
 * [Exa API](https://exa.ai/) - Powerful neural search for web content
-* [ArXiv](https://arxiv.org/) - Academic papers in physics, mathematics, computer science, and more
-* [PubMed](https://pubmed.ncbi.nlm.nih.gov/) - Biomedical literature from MEDLINE, life science journals, and online books
-* [Linkup API](https://www.linkup.so/) - General web search
-* [DuckDuckGo API](https://duckduckgo.com/) - General web search
 * [Google Search API/Scrapper](https://google.com/) - Create custom search engine [here](https://programmablesearchengine.google.com/controlpanel/all) and get API key [here](https://developers.google.com/custom-search/v1/introduction)
-* [Microsoft Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) - Cloud based vector database solution 
 
 Open Deep Research is compatible with many different LLMs: 
 
@@ -124,7 +119,7 @@ The graph-based implementation follows a structured plan-and-execute workflow:
 - **Human-in-the-Loop**: Allows for human feedback and approval of the report plan before proceeding
 - **Sequential Research Process**: Creates sections one by one with reflection between search iterations
 - **Section-Specific Research**: Each section has dedicated search queries and content retrieval
-- **Supports Multiple Search Tools**: Works with all search providers (Tavily, Perplexity, Exa, ArXiv, PubMed, Linkup, etc.)
+- **Supports Multiple Search Tools**: Works with all search providers (Tavily, Perplexity, Exa, Google)
 
 This implementation provides a more interactive experience with greater control over the report structure, making it ideal for situations where report quality and accuracy are critical.
 
@@ -139,7 +134,7 @@ You can customize the research assistant workflow through several parameters:
 - `writer_provider`: Model provider for writing phase (default: "anthropic", but can be any provider from supported integrations with `init_chat_model` as listed [here](https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html))
 - `writer_model`: Model for writing the report (default: "claude-3-5-sonnet-latest")
 - `writer_model_kwargs`: Additional parameter for writer_model
-- `search_api`: API to use for web searches (default: "tavily", options include "perplexity", "exa", "arxiv", "pubmed", "linkup")
+- `search_api`: API to use for web searches (default: "tavily", options include "perplexity", "exa", "googlesearch")
 
 ## 2. Multi-Agent Implementation (`src/open_deep_research/multi_agent.py`)
 
@@ -149,7 +144,7 @@ The multi-agent implementation uses a supervisor-researcher architecture:
 - **Researcher Agents**: Multiple independent agents work in parallel, each responsible for researching and writing a specific section
 - **Parallel Processing**: All sections are researched simultaneously, significantly reducing report generation time
 - **Specialized Tool Design**: Each agent has access to specific tools for its role (search for researchers, section planning for supervisors)
-- **Search and MCP Support**: Works with Tavily/DuckDuckGo for web search, MCP servers for local/external data access, or can operate without search tools using only MCP tools
+- **Search and MCP Support**: Works with Tavily for web search, MCP servers for local/external data access, or can operate without search tools using only MCP tools
 
 This implementation focuses on efficiency and parallelization, making it ideal for faster report generation with less direct user involvement.
 
@@ -174,7 +169,7 @@ The multi-agent implementation (`src/open_deep_research/multi_agent.py`) support
 ```python
 config = {
     "configurable": {
-        "search_api": "none",  # Use "tavily" or "duckduckgo" to combine with web search
+        "search_api": "none",  # Use "tavily" to combine with web search
         "mcp_server_config": {
             "filesystem": {
                 "command": "npx",
@@ -258,21 +253,6 @@ Not all search APIs support additional configuration parameters. Here are the on
   - Note: `include_domains` and `exclude_domains` cannot be used together
   - Particularly useful when you need to narrow your research to specific trusted sources, ensure information accuracy, or when your research requires using specified domains (e.g., academic journals, government sites)
   - Provides AI-generated summaries tailored to your specific query, making it easier to extract relevant information from search results
-- **ArXiv**: `load_max_docs`, `get_full_documents`, `load_all_available_meta`
-- **PubMed**: `top_k_results`, `email`, `api_key`, `doc_content_chars_max`
-- **Linkup**: `depth`
-
-Example with Exa configuration:
-```python
-thread = {"configurable": {"thread_id": str(uuid.uuid4()),
-                           "search_api": "exa",
-                           "search_api_config": {
-                               "num_results": 5,
-                               "include_domains": ["nature.com", "sciencedirect.com"]
-                           },
-                           # Other configuration...
-                           }}
-```
 
 ## Model Considerations
 

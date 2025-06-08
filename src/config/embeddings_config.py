@@ -14,7 +14,7 @@ class SimpleOpenAIEmbeddings(Embeddings):
         self.model = model
         self.base_url = base_url
         self.client = OpenAI(
-            api_key=api_key or os.getenv("OPENAI_API_KEY"),
+            api_key=api_key or os.getenv("METIS_API_KEY"),
             base_url=base_url
         )
     
@@ -50,10 +50,11 @@ EMBEDDINGS_PROVIDERS = {
         "base_url": "https://api.metisai.ir/openai/v1",
         "class": SimpleOpenAIEmbeddings,
         "models": {
-            "text-embedding-3-small": {"api_key_env": "OPENAI_API_KEY"},
-            "text-embedding-3-large": {"api_key_env": "OPENAI_API_KEY"}
+            "text-embedding-3-small": {"api_key_env": "METIS_API_KEY"},
+            "text-embedding-3-large": {"api_key_env": "METIS_API_KEY"}
         }
     }
+    
 }
 
 # Default configuration - can be overridden by environment variables
