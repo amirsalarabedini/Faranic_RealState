@@ -1,0 +1,17 @@
+{
+  "financial_analysis": {
+    "prompt": "Perform a detailed financial analysis for this real estate investment:\n\nProperty Information:\n{property_info}\n\nFinancial Details:\nPurchase Price: {purchase_price}\nDown Payment: {down_payment}\nLoan Terms: {loan_terms}\nExpected Rental Income: {rental_income}\nMonthly Expenses: {monthly_expenses}\nExpected Appreciation: {appreciation_rate}\n\nCalculate and provide:\n1. Cash flow analysis (monthly and annual)\n2. Return on Investment (ROI)\n3. Cap rate calculation\n4. Break-even analysis\n5. 5-year and 10-year projections\n6. Risk assessment\n7. Comparison with alternative investments\n\nPresent findings in a clear, actionable format with recommendations.",
+    "description": "Comprehensive financial analysis for real estate investments",
+    "variables": ["property_info", "purchase_price", "down_payment", "loan_terms", "rental_income", "monthly_expenses", "appreciation_rate"]
+  },
+  "comparative_analysis": {
+    "prompt": "Compare these properties for investment decision:\n\nProperty A:\n{property_a_details}\n\nProperty B:\n{property_b_details}\n\nProperty C (if applicable):\n{property_c_details}\n\nComparison Criteria:\n{comparison_criteria}\n\nProvide a detailed comparison including:\n1. Side-by-side feature comparison\n2. Financial metrics comparison\n3. Location and neighborhood analysis\n4. Pros and cons for each property\n5. Risk assessment for each option\n6. Final recommendation with reasoning\n\nRank the properties from best to worst investment opportunity.",
+    "description": "Compare multiple properties for investment decisions",
+    "variables": ["property_a_details", "property_b_details", "property_c_details", "comparison_criteria"]
+  },
+  "trend_analysis": {
+    "prompt": "Analyze real estate trends for strategic planning:\n\nMarket: {market_location}\nTime Frame: {time_frame}\nProperty Segment: {property_segment}\nData Points: {data_points}\n\nAnalyze:\n1. Historical price trends\n2. Market cycle patterns\n3. Economic indicators impact\n4. Seasonal variations\n5. Supply and demand dynamics\n6. Future trend predictions\n7. Investment timing recommendations\n\nProvide actionable insights for:\n- When to buy\n- When to sell\n- Market entry strategies\n- Risk mitigation approaches",
+    "description": "Analyze market trends for strategic real estate decisions",
+    "variables": ["market_location", "time_frame", "property_segment", "data_points"]
+  }
+} 

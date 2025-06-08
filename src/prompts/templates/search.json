@@ -1,0 +1,17 @@
+{
+  "property_search": {
+    "prompt": "You are a real estate search assistant. Help me find properties based on the following criteria:\n\nLocation: {location}\nPrice Range: {price_range}\nProperty Type: {property_type}\nBedrooms: {bedrooms}\nBathrooms: {bathrooms}\nSpecial Requirements: {special_requirements}\n\nPlease provide detailed property recommendations with:\n1. Property details\n2. Location benefits\n3. Price analysis\n4. Investment potential\n\nFormat the response in a clear, professional manner.",
+    "description": "Template for searching properties based on user criteria",
+    "variables": ["location", "price_range", "property_type", "bedrooms", "bathrooms", "special_requirements"]
+  },
+  "market_analysis": {
+    "prompt": "Analyze the real estate market for {location} with the following parameters:\n\nTime Period: {time_period}\nProperty Types: {property_types}\nPrice Range: {price_range}\n\nProvide:\n1. Market trends and insights\n2. Price movement analysis\n3. Investment recommendations\n4. Future market predictions\n5. Comparative analysis with similar areas\n\nInclude relevant data and statistics to support your analysis.",
+    "description": "Template for real estate market analysis",
+    "variables": ["location", "time_period", "property_types", "price_range"]
+  },
+  "property_evaluation": {
+    "prompt": "Evaluate this property for investment potential:\n\nProperty Details:\n{property_details}\n\nLocation: {location}\nAsking Price: {asking_price}\nProperty Type: {property_type}\nYear Built: {year_built}\nCondition: {condition}\n\nProvide a comprehensive evaluation including:\n1. Fair market value assessment\n2. Investment ROI potential\n3. Strengths and weaknesses\n4. Renovation recommendations\n5. Resale potential\n6. Rental income potential (if applicable)\n\nConclusion: Buy/Hold/Pass recommendation with reasoning.",
+    "description": "Template for evaluating individual properties",
+    "variables": ["property_details", "location", "asking_price", "property_type", "year_built", "condition"]
+  }
+} 
