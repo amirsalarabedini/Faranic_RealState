@@ -31,6 +31,8 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.tools import tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langsmith import traceable
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 
 from configuration import Configuration
 from state import Section
@@ -158,6 +160,15 @@ Content:
 
 """
     return formatted_str
+
+async def summarize_webpage(model: BaseChatModel, content: str) -> str:
+    """Summarize the content of a webpage."""
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an expert at summarizing web content. Provide a concise summary of the given text, focusing on the key points and main ideas. Do not include personal opinions or interpretations. Just summarize the facts from the content."),
+        ("user", "{content}")
+    ])
+    chain = prompt | model | StrOutputParser()
+    return await chain.ainvoke({"content": content})
 
 @traceable
 async def tavily_search_async(search_queries, max_results: int = 5, topic: Literal["general", "news", "finance"] = "general", include_raw_content: bool = True):

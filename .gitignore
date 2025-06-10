@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Ignore all files in the output directory
+output/*
+
+# Ignore all files in the output directory
+output/*
