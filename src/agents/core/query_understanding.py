@@ -1,6 +1,6 @@
 from langsmith import traceable
-from ...models.state import RISAState
-from ...config.llm_config import get_default_llm
+from src.models.state import RISAState
+from src.configs.llm_config import get_default_llm
 
 class QueryUnderstandingAgent:
     """Query understanding and intent analysis agent"""

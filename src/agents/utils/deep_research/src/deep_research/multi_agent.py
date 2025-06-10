@@ -24,18 +24,18 @@ from langchain_core.tools import tool, BaseTool
 from langchain_core.runnables import RunnableConfig
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.graph import MessagesState
-from src.config import get_default_embeddings, get_default_llm, get_current_embeddings_config
+from src.configs.llm_config import get_default_llm
 from langgraph.types import Command, Send
 from langgraph.graph import START, END, StateGraph
-from open_deep_research.configuration import Configuration
-from open_deep_research.utils import (
+from configuration import Configuration
+from utils import (
     get_config_value,
     tavily_search,
     get_today_str,
     perplexity_search
 )
 
-from open_deep_research.prompts import SUPERVISOR_INSTRUCTIONS, RESEARCH_INSTRUCTIONS
+from prompts import SUPERVISOR_INSTRUCTIONS, RESEARCH_INSTRUCTIONS
 
 ## Tools factory - will be initialized based on configuration
 def get_search_tool(config: RunnableConfig):
@@ -508,7 +508,7 @@ graph = supervisor_builder.compile()
 # Simple test script
 async def test_multi_agent():
     """Simple test function for the multi-agent workflow"""
-    from open_deep_research.configuration import Configuration
+    from configuration import Configuration
     
     # Test configuration with increased recursion limit and no external API calls
     config = Configuration()

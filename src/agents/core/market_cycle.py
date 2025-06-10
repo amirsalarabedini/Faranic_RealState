@@ -1,14 +1,6 @@
 from langsmith import traceable
-try:
-    from ...models.state import RISAState
-    from ...config.llm_config import get_default_llm
-except ImportError:
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
-    from src.models.state import RISAState
-    from src.config.llm_config import get_default_llm
-
+from src.models.state import RISAState
+from src.configs.llm_config import get_default_llm
 import json
 
 class MarketCycleAgent:

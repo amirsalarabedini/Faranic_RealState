@@ -16,7 +16,10 @@ def test_knowledge_base():
     print("=" * 50)
     
     # Test knowledge base file existence
-    knowledge_file = "/Users/mac/Desktop/Faranic_RealState/data/raw/processed/Sarmaye maskan-compressed.md"
+    knowledge_file = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "raw", "processed", "Sarmaye maskan-compressed.md"
+    )
     if os.path.exists(knowledge_file):
         print(f"✅ Knowledge base file found: {knowledge_file}")
         

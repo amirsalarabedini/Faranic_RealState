@@ -23,7 +23,7 @@ parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 from langchain.chat_models import init_chat_model
-from src.config import get_default_embeddings, get_default_llm, get_current_embeddings_config
+from src.configs.llm_config import get_default_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 
@@ -31,7 +31,7 @@ from langgraph.constants import Send
 from langgraph.graph import START, END, StateGraph
 from langgraph.types import interrupt, Command
 
-from .state import (
+from state import (
     ReportStateInput,
     ReportStateOutput,
     Sections,
@@ -41,7 +41,7 @@ from .state import (
     Queries,
     Feedback
 )
-from .prompts import (
+from prompts import (
     report_planner_query_writer_instructions,
     report_planner_instructions,
     query_writer_instructions, 
@@ -50,8 +50,8 @@ from .prompts import (
     section_grader_instructions,
     section_writer_inputs
 )
-from .configuration import Configuration
-from .utils import (
+from configuration import Configuration
+from utils import (
     format_sections, 
     get_config_value, 
     get_search_params, 

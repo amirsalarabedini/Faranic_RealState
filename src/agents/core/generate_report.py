@@ -3,8 +3,8 @@ from typing import Dict, Any
 from datetime import datetime
 import json
 from langchain_core.messages import HumanMessage, SystemMessage
-from src.config import get_llm
-from ...models.state import RISAState
+from src.configs.llm_config import get_llm
+from src.models.state import RISAState
 
 class GenerateReportAgent:
     """Final analysis report generation agent"""

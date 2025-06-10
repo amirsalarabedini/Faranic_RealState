@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage
-from src.config import get_llm
+from src.configs.llm_config import get_llm
 from ...models.state import RISAState
 from .knowledge_retriever import get_knowledge_retriever
 from .web_search import get_web_search_agent

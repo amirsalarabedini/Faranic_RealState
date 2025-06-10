@@ -11,19 +11,7 @@ import json
 from datetime import datetime
 
 # Handle imports for both direct execution and module imports
-try:
-    from src.config.llm_config import get_llm
-except ImportError:
-    # If running directly, try to add the project root to the path
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-    sys.path.insert(0, project_root)
-    try:
-        from src.config.llm_config import get_llm
-    except ImportError:
-        # Fallback: create a simple LLM getter
-        def get_llm():
-            return init_chat_model("anthropic:claude-3-haiku-latest", temperature=0.1)
-        print("⚠️  Using fallback LLM configuration")
+from src.configs.llm_config import get_llm
 
 # Initialize global search instance
 _tavily_search = None

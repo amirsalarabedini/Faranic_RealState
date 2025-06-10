@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.agents.routing.orchestrator import orchestrator
 from src.models.state import RISAState
-from src.config.llm_config import get_current_config
+from src.configs.llm_config import get_current_config
 
 
 def main():

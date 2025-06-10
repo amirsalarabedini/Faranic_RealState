@@ -8,7 +8,8 @@ from typing import Dict, Any, List
 import os
 import json
 from datetime import datetime
-from src.config import get_default_embeddings, get_default_llm, get_current_embeddings_config
+from src.configs.llm_config import get_default_llm
+from src.configs.embeddings_config import get_default_embeddings, get_current_embeddings_config
 
 class KnowledgeRetriever:
     """Agentic RAG system for accessing the real estate knowledge base"""

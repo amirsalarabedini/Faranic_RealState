@@ -5,35 +5,41 @@ Test script for Web Search functionality
 
 import os
 import sys
+from typing import Any
+from langchain_core.messages import AIMessage
+
 # Add parent directory to Python path to find src module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.agents.core.web_search import WebSearchAgent, get_web_search_agent
+from src.agents.core.web_search import (
+    get_web_search_agent,
+    check_if_web_search_needed,
+    search_current_information,
+    analyze_search_results,
+    create_web_search_agent
+)
 
-def test_web_search():
-    """Test the web search system"""
-    print("🌐 Testing Web Search Agent")
-    print("=" * 50)
-    
-    # Check API keys
+def check_api_keys():
+    """Check for necessary API keys."""
     tavily_key = os.getenv("TAVILY_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+    
     if not tavily_key:
         print("❌ TAVILY_API_KEY not found. Web search tests will fail.")
         return False
-    else:
-        print(f"✅ TAVILY_API_KEY found: {tavily_key[:8]}...")
-    
-    # Test WebSearchAgent initialization
-    try:
-        print("\n🔄 Initializing Web Search Agent...")
-        agent = WebSearchAgent()
-        print("✅ Web Search Agent initialized successfully")
-    except Exception as e:
-        print(f"❌ Error initializing Web Search Agent: {e}")
+    if not openai_key:
+        print("❌ OPENAI_API_KEY not found. LLM-based tests will fail.")
         return False
+        
+    print(f"✅ TAVILY_API_KEY found: {tavily_key[:8]}...")
+    print(f"✅ OPENAI_API_KEY found: {openai_key[:8]}...")
+    return True
+
+def test_tool_check_if_web_search_needed():
+    """Test the check_if_web_search_needed tool."""
+    print("\n🤔 Testing Tool: check_if_web_search_needed")
+    print("-" * 50)
     
-    # Test web search decision logic
-    print("\n🤔 Testing Web Search Decision Logic:")
     test_queries = [
         ("current housing prices in Tehran", True),
         ("latest real estate market news", True),
@@ -44,138 +50,144 @@ def test_web_search():
     
     for query, expected in test_queries:
         try:
-            result = agent.should_use_web_search(query)
+            result = check_if_web_search_needed.invoke(query)
             status = "✅" if result == expected else "⚠️"
             print(f"  {status} '{query}' -> {result} (expected: {expected})")
         except Exception as e:
             print(f"  ❌ Error testing '{query}': {e}")
-    
-    # Test basic web search
-    print("\n🔍 Testing Web Search:")
-    search_queries = [
-        "real estate market trends Iran 2024",
-        "housing prices Tehran current",
-        "mortgage rates Iran latest"
-    ]
-    
-    for i, query in enumerate(search_queries, 1):
-        try:
-            print(f"\n  {i}. Query: '{query}'")
-            results = agent.search_web(query, max_results=3)
-            
-            if results and len(results) > 0:
-                print(f"     ✅ Found {len(results)} results")
-                for j, result in enumerate(results[:2], 1):  # Show first 2 results
-                    title = result.get('title', 'No title')[:50]
-                    url = result.get('url', 'No URL')
-                    score = result.get('score', 0)
-                    print(f"       {j}. {title}... (Score: {score:.2f})")
-                    print(f"          URL: {url}")
-            else:
-                print(f"     ⚠️  No results returned")
-                
-        except Exception as e:
-            print(f"     ❌ Error: {e}")
-    
-    # Test result synthesis
-    print("\n🔀 Testing Result Synthesis:")
-    synthesis_test_queries = [
-        "What are current housing market trends in Iran?",
-        "What are the latest mortgage rates?",
-        "Recent real estate news in Tehran"
-    ]
-    
-    for i, query in enumerate(synthesis_test_queries, 1):
-        try:
-            print(f"\n  {i}. Query: '{query}'")
-            print("     🔄 Processing...")
-            
-            result = agent.process_web_query(query)
-            
-            if result and 'answer' in result:
-                print(f"     ✅ Answer generated")
-                print(f"     📊 Source: {result.get('source', 'unknown')}")
-                print(f"     📅 Timestamp: {result.get('timestamp', 'N/A')}")
-                print(f"     📄 Results count: {len(result.get('results', []))}")
-                
-                # Show answer preview
-                answer_preview = result['answer'][:200].replace('\n', ' ').strip()
-                print(f"     💬 Answer: {answer_preview}...")
-                
-            else:
-                print(f"     ⚠️  No answer generated")
-                
-        except Exception as e:
-            print(f"     ❌ Error: {e}")
-    
-    print("\n🎉 Web Search test completed!")
-    return True
 
-def test_global_web_search_agent():
-    """Test the global web search agent instance"""
-    print("\n🌍 Testing Global Web Search Agent:")
-    print("-" * 40)
+def test_tool_search_current_information():
+    """Test the search_current_information tool."""
+    print("\n🔍 Testing Tool: search_current_information")
+    print("-" * 50)
+    
+    query = "housing prices Tehran current"
+    try:
+        print(f"  Query: '{query}'")
+        results = search_current_information.invoke({"query": query, "max_results": 3})
+        
+        if results and len(results) > 0:
+            print(f"     ✅ Found {len(results)} results")
+            for j, result in enumerate(results[:2], 1):
+                title = result.get('title', 'No title')[:50]
+                url = result.get('url', 'No URL')
+                score = result.get('score', 0)
+                print(f"       {j}. {title}... (Score: {score:.2f})")
+                print(f"          URL: {url}")
+        else:
+            print(f"     ⚠️  No results returned")
+            
+    except Exception as e:
+        print(f"     ❌ Error: {e}")
+
+def test_tool_analyze_search_results():
+    """Test the analyze_search_results tool."""
+    print("\n🔀 Testing Tool: analyze_search_results")
+    print("-" * 50)
+    
+    query = "What are current housing market trends in Iran?"
+    mock_search_results = [
+        {
+            "title": "Iran Real Estate Market Outlook 2024",
+            "content": "The Tehran housing market has seen a 15% increase in prices in the last quarter...",
+            "url": "http://example.com/iran-real-estate-2024",
+            "score": 0.9
+        },
+        {
+            "title": "Iranian Construction Sector Report",
+            "content": "New construction projects are on the rise in major cities, despite economic challenges.",
+            "url": "http://example.com/iran-construction-report",
+            "score": 0.85
+        }
+    ]
     
     try:
-        # Test getting global instance
-        agent1 = get_web_search_agent()
-        agent2 = get_web_search_agent()
+        print(f"  Query: '{query}'")
+        answer = analyze_search_results.invoke({"query": query, "search_results": mock_search_results})
         
-        # Should be the same instance
-        if agent1 is agent2:
-            print("✅ Global instance working correctly (singleton pattern)")
+        if answer and isinstance(answer, str) and len(answer) > 20:
+            print("     ✅ Answer generated successfully")
+            answer_preview = answer.replace('\n', ' ').strip()[:150]
+            print(f"     💬 Answer Preview: {answer_preview}...")
         else:
-            print("⚠️  Global instance not following singleton pattern")
-        
-        # Test functionality through global instance
-        result = agent1.should_use_web_search("current market prices")
-        print(f"✅ Global agent functionality test: {result}")
-        
+            print("     ⚠️  Answer generation failed or produced a minimal response.")
+            
     except Exception as e:
-        print(f"❌ Error testing global agent: {e}")
+        print(f"     ❌ Error: {e}")
 
-def test_api_connectivity():
-    """Test API connectivity and configuration"""
-    print("\n🔌 Testing API Connectivity:")
-    print("-" * 30)
+def test_full_agent_flow():
+    """Test the full web search agent flow."""
+    print("\n🚀 Testing Full Web Search Agent Flow")
+    print("=" * 50)
     
-    # Check environment variables
-    required_vars = ["TAVILY_API_KEY", "OPENAI_API_KEY"]
+    try:
+        print("  🔄 Initializing Web Search Agent...")
+        agent = create_web_search_agent(with_memory=False)
+        print("  ✅ Agent initialized successfully")
+    except Exception as e:
+        print(f"  ❌ Error initializing agent: {e}")
+        return
+
+    query = "What are the latest mortgage rates in Iran?"
     
-    for var in required_vars:
-        value = os.getenv(var)
-        if value:
-            print(f"✅ {var}: {value[:8]}...")
+    try:
+        print(f"\n  ▶️  Invoking agent with query: '{query}'")
+        
+        input_data = {"messages": [("user", query)]}
+        
+        final_chunk = None
+        for chunk in agent.stream(input_data):
+            final_chunk = chunk
+        
+        print("\n  🏁 Agent finished processing")
+        
+        final_state = None
+        # The final answer from the ReAct agent is in the 'agent' key of the last chunk
+        if final_chunk and "agent" in final_chunk:
+            agent_output = final_chunk.get("agent", {})
+            messages = agent_output.get("messages", [])
+            if messages and isinstance(messages[-1], AIMessage):
+                final_state = messages[-1].content
+        
+        if final_state:
+            print("  ✅ Final answer received from agent.")
+            print(f"  💬 Agent's Answer:\n{final_state}")
         else:
-            print(f"❌ {var}: Not found")
-    
-    # Test basic connectivity
+            print("  ⚠️  Agent did not produce a final answer.")
+            print(f"    Last chunk from stream: {final_chunk}")
+
+    except Exception as e:
+        print(f"  ❌ Error during agent invocation: {e}")
+
+def test_get_web_search_agent_creation():
+    """Test that get_web_search_agent returns a valid agent."""
+    print("\n🔧 Testing Factory: get_web_search_agent")
+    print("-" * 50)
     try:
         agent = get_web_search_agent()
-        
-        # Simple test query
-        test_result = agent.search_web("test query", max_results=1)
-        if test_result:
-            print("✅ Web search API connectivity confirmed")
+        if hasattr(agent, 'invoke') and hasattr(agent, 'stream'):
+             print("✅ get_web_search_agent returned a valid agent object.")
         else:
-            print("⚠️  Web search API returned empty results")
-            
+             print("❌ get_web_search_agent did not return a valid agent.")
     except Exception as e:
-        print(f"❌ API connectivity error: {e}")
+        print(f"❌ Error creating agent with get_web_search_agent: {e}")
+
 
 if __name__ == "__main__":
-    # Check critical environment variables
-    if not os.getenv("OPENAI_API_KEY"):
-        print("⚠️  Warning: OPENAI_API_KEY not found. Some tests may fail.")
+    print("=" * 60)
+    print("     Running Web Search Agent Tests")
+    print("=" * 60)
     
-    if not os.getenv("TAVILY_API_KEY"):
-        print("⚠️  Warning: TAVILY_API_KEY not found. Web search tests will fail.")
-    
-    # Run all tests
-    test_api_connectivity()
-    success = test_web_search()
-    test_global_web_search_agent()
-    
-    print("\n" + "=" * 50)
-    print("Web Search test completed! Check the results above.")
+    if not check_api_keys():
+        print("\nHalting tests due to missing API keys.")
+    else:
+        test_tool_check_if_web_search_needed()
+        test_tool_search_current_information()
+        test_tool_analyze_search_results()
+        test_full_agent_flow()
+        test_get_web_search_agent_creation()
+
+    print("\n" + "=" * 60)
+    print("Web Search test suite completed!")
+    print("=" * 60)
 
