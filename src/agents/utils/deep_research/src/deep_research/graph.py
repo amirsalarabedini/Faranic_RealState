@@ -237,31 +237,24 @@ async def search_web(state: SectionState, config: RunnableConfig):
 
     return {"source_str": source_str, "search_iterations": state["search_iterations"] + 1}
 
-async def write_section(state: SectionState, config: RunnableConfig) -> Command[Literal[END, "search_web"]]:
-    """Write a section of the report and evaluate if more research is needed.
+async def write_section(state: SectionState, config: RunnableConfig):
+    """Write a section of the report.
     
     This node:
     1. Writes section content using search results
-    2. Evaluates the quality of the section
-    3. Either:
-       - Completes the section if quality passes
-       - Triggers more research if quality fails
     
     Args:
         state: Current state with search results and section info
         config: Configuration for writing and evaluation
         
     Returns:
-        Command to either complete section or do more research
+        Dict with the updated section
     """
 
     # Get state 
     topic = state["topic"]
     section = state["section"]
     source_str = state["source_str"]
-
-    # Get configuration
-    configurable = Configuration.from_runnable_config(config)
 
     # Format system instructions
     section_writer_inputs_formatted = section_writer_inputs.format(topic=topic, 
@@ -278,6 +271,18 @@ async def write_section(state: SectionState, config: RunnableConfig) -> Command[
     
     # Write content to the section object  
     section.content = section_content.content
+
+    return {"section": section}
+
+async def reflection(state: SectionState, config: RunnableConfig):
+    """Reflect on the written section and decide if more research is needed."""
+    
+    # Get state 
+    topic = state["topic"]
+    section = state["section"]
+
+    # Get configuration
+    configurable = Configuration.from_runnable_config(config)
 
     # Grade prompt 
     section_grader_message = ("Grade the report and consider follow-up questions for missing information. "
@@ -296,20 +301,23 @@ async def write_section(state: SectionState, config: RunnableConfig) -> Command[
     feedback = await reflection_model.ainvoke([SystemMessage(content=section_grader_instructions_formatted),
                                         HumanMessage(content=section_grader_message)])
 
-    # If the section is passing or the max search depth is reached, publish the section to completed sections 
-    if feedback.grade == "pass" or state["search_iterations"] >= configurable.max_search_depth:
-        # Publish the section to completed sections 
-        update = {"completed_sections": [section]}
-        if configurable.include_source_str:
-            update["source_str"] = source_str
-        return Command(update=update, goto=END)
+    return {"grade": feedback.grade, "search_queries": feedback.follow_up_queries}
 
-    # Update the existing section with new content and update search queries
+def evaluate_research(state: SectionState, config: RunnableConfig) -> Literal["search_web", "finalize_section"]:
+    """Evaluate the reflection and decide the next step."""
+    configurable = Configuration.from_runnable_config(config)
+    if state["grade"] == "pass" or state["search_iterations"] >= configurable.max_search_depth:
+        return "finalize_section"
     else:
-        return Command(
-            update={"search_queries": feedback.follow_up_queries, "section": section},
-            goto="search_web"
-        )
+        return "search_web"
+
+def finalize_section(state: SectionState, config: RunnableConfig):
+    """Finalizes the section by preparing it for output."""
+    configurable = Configuration.from_runnable_config(config)
+    update = {"completed_sections": [state["section"]]}
+    if configurable.include_source_str:
+        update["source_str"] = state["source_str"]
+    return update
     
 async def write_final_sections(state: SectionState, config: RunnableConfig):
     """Write sections that don't require research using completed sections as context.
@@ -430,11 +438,23 @@ section_builder = StateGraph(SectionState, output=SectionOutputState)
 section_builder.add_node("generate_queries", generate_queries)
 section_builder.add_node("search_web", search_web)
 section_builder.add_node("write_section", write_section)
+section_builder.add_node("reflection", reflection)
+section_builder.add_node("finalize_section", finalize_section)
 
 # Add edges
 section_builder.add_edge(START, "generate_queries")
 section_builder.add_edge("generate_queries", "search_web")
 section_builder.add_edge("search_web", "write_section")
+section_builder.add_edge("write_section", "reflection")
+section_builder.add_conditional_edges(
+    "reflection",
+    evaluate_research,
+    {
+        "search_web": "search_web",
+        "finalize_section": "finalize_section"
+    }
+)
+section_builder.add_edge("finalize_section", END)
 
 # Outer graph for initial report plan compiling results from each section -- 
 
@@ -455,17 +475,21 @@ builder.add_conditional_edges("gather_completed_sections", initiate_final_sectio
 builder.add_edge("write_final_sections", "compile_final_report")
 builder.add_edge("compile_final_report", END)
 
-graph = builder.compile() 
+_graph = builder.compile() 
+
+def get_deep_research_agent():
+    """Returns the compiled deep research agent."""
+    return _graph
 
 async def test_graph():
     """Test the graph with a sample input."""
     # Test input
     test_input = {
-        "topic": "The impact of artificial intelligence on modern healthcare"
+        "topic": "The can you give me the house price changes in tehran in 1393-1394 iran, give me numbers"
     }
     # Run the graph
     config = Configuration()
-    result = await graph.ainvoke(test_input, config={"configurable": config})
+    result = await _graph.ainvoke(test_input, config={"configurable": config})
     print(result)
     
     # Save the results
@@ -475,3 +499,5 @@ async def test_graph():
  
 if __name__ == "__main__":
     asyncio.run(test_graph())
+
+
