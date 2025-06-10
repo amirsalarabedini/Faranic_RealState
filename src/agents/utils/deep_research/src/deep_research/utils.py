@@ -1004,6 +1004,28 @@ def stitch_documents_by_url(documents: list[Document]) -> list[Document]:
 
 
 def get_today_str() -> str:
-    """Get current date in a human-readable format."""
-    return datetime.datetime.now().strftime("%a %b %-d, %Y")
+    """ Returns the current date as a string """
+    return datetime.datetime.now().strftime("%Y-%m-%d")
 
+def save_final_report(result: dict, project_root: str):
+    """Saves the final report to a markdown file."""
+    output_dir = os.path.join(project_root, 'src')
+    final_report = result.get('final_report')
+    if final_report:
+        report_path = os.path.join(output_dir, 'final_report.md')
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write(final_report)
+        print(f"Final report saved to {report_path}")
+
+def save_graph_output(result: dict, project_root: str):
+    """Saves the full graph output to a JSON file."""
+    def serialize_pydantic(obj):
+        if hasattr(obj, 'model_dump'):
+            return obj.model_dump()
+        return f"<<non-serializable: {type(obj).__name__}>>"
+
+    output_dir = os.path.join(project_root, 'src')
+    output_path = os.path.join(output_dir, 'graph_output.json')
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(result, f, indent=2, default=serialize_pydantic)
+    print(f"Full graph output saved to {output_path}")
