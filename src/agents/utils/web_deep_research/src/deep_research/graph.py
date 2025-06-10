@@ -276,7 +276,6 @@ async def write_section(state: SectionState, config: RunnableConfig):
 
 async def reflection(state: SectionState, config: RunnableConfig):
     """Reflect on the written section and decide if more research is needed."""
-    
     # Get state 
     topic = state["topic"]
     section = state["section"]
@@ -300,21 +299,22 @@ async def reflection(state: SectionState, config: RunnableConfig):
     # Generate feedback
     feedback = await reflection_model.ainvoke([SystemMessage(content=section_grader_instructions_formatted),
                                         HumanMessage(content=section_grader_message)])
+    
+    return {"feedback": feedback, "search_queries": feedback.follow_up_queries}
 
-    return {"grade": feedback.grade, "search_queries": feedback.follow_up_queries}
-
-def evaluate_research(state: SectionState, config: RunnableConfig) -> Literal["search_web", "finalize_section"]:
-    """Evaluate the reflection and decide the next step."""
+def evaluate_section(state: SectionState, config: RunnableConfig) -> Literal["finalize_section", "search_web"]:
+    """Evaluate the feedback and decide the next step."""
     configurable = Configuration.from_runnable_config(config)
-    if state["grade"] == "pass" or state["search_iterations"] >= configurable.max_search_depth:
+    if state["feedback"].grade == "pass" or state["search_iterations"] >= configurable.max_search_depth:
         return "finalize_section"
     else:
         return "search_web"
 
-def finalize_section(state: SectionState, config: RunnableConfig):
-    """Finalizes the section by preparing it for output."""
+def finalize_section(state: SectionState, config: RunnableConfig) -> dict:
+    """Finalize the section and prepare for output."""
     configurable = Configuration.from_runnable_config(config)
-    update = {"completed_sections": [state["section"]]}
+    section = state["section"]
+    update = {"completed_sections": [section]}
     if configurable.include_source_str:
         update["source_str"] = state["source_str"]
     return update
@@ -446,14 +446,7 @@ section_builder.add_edge(START, "generate_queries")
 section_builder.add_edge("generate_queries", "search_web")
 section_builder.add_edge("search_web", "write_section")
 section_builder.add_edge("write_section", "reflection")
-section_builder.add_conditional_edges(
-    "reflection",
-    evaluate_research,
-    {
-        "search_web": "search_web",
-        "finalize_section": "finalize_section"
-    }
-)
+section_builder.add_conditional_edges("reflection", evaluate_section)
 section_builder.add_edge("finalize_section", END)
 
 # Outer graph for initial report plan compiling results from each section -- 
@@ -485,7 +478,7 @@ async def test_graph():
     """Test the graph with a sample input."""
     # Test input
     test_input = {
-        "topic": "The can you give me the house price changes in tehran in 1393-1394 iran, give me numbers"
+        "topic": "The can you give me the house price changes in tehran in 1393-1394 iran"
     }
     # Run the graph
     config = Configuration()

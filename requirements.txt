@@ -22,3 +22,5 @@ cohere>=4.0.0
 langchain-community>=0.0.10
 langchain-text-splitters>=0.0.1
 tiktoken>=0.5.0
+faiss-cpu
+langchain-community

@@ -7,7 +7,7 @@ from .data_ingest import data_ingest, get_data_ingest_agent, DataIngestAgent
 from .market_cycle import market_cycle, get_market_cycle_agent, MarketCycleAgent
 from .query_understanding import query_understanding, get_query_understanding_agent, QueryUnderstandingAgent
 from .generate_report import generate_report, get_generate_report_agent, GenerateReportAgent
-from .knowledge_retriever import get_knowledge_retriever, KnowledgeRetriever
+from ..utils.knowlge_base_deep_research.graph import get_knowledge_retriever, KnowledgeRetriever
 from .web_search import get_web_search_agent, create_web_search_agent as WebSearchAgent
 
 

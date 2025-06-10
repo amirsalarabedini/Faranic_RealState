@@ -9,7 +9,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage
 from src.configs.llm_config import get_llm
 from ...models.state import RISAState
-from .knowledge_retriever import get_knowledge_retriever
+from ..utils.knowlge_base_deep_research.graph import get_knowledge_retriever
 from .web_search import get_web_search_agent
 
 @tool
