@@ -9,15 +9,12 @@ import json
 import uuid
 from datetime import datetime
 
-# Add project root to path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+
 
 from src.agents.core.base_agent import BaseAgent
 from src.agents.core.work_order import WorkOrder, ClientType, TaskType, PropertySpecs
 from src.agents.core.agent_communication import AgentMessage
-from src.agents.prompts import RECEPTIONIST_ANALYSIS_PROMPT
+from src.agents.prompts import QUERY_UNDERSTANDING_PROMPT
 from langchain_core.messages import HumanMessage
 
 class QueryUnderstandingAgent(BaseAgent):
@@ -33,19 +30,18 @@ class QueryUnderstandingAgent(BaseAgent):
     
     def __init__(self, agent_id: str = None):
         super().__init__(agent_id, "QueryUnderstandingAgent")
-        self.analysis_prompt = RECEPTIONIST_ANALYSIS_PROMPT
+        self.analysis_prompt = QUERY_UNDERSTANDING_PROMPT
     
     async def analyze_user_query(self, user_query: str) -> Dict[str, Any]:
         """
         Analyze a user query and extract structured information
         """
         try:
-            # Use LLM to analyze the query
             response = await self.llm.ainvoke([
                 HumanMessage(content=self.analysis_prompt.format(user_query=user_query))
             ])
             
-            # Log the raw response for debugging
+            
             self.log_activity("Raw LLM response", {"response": response.content[:200]})
             
             # Extract JSON from markdown code blocks if present
@@ -90,7 +86,7 @@ class QueryUnderstandingAgent(BaseAgent):
         if not primary_task or primary_task not in valid_task_types:
             raise ValueError(f"Invalid or missing 'primary_task'. Found '{primary_task}', expected one of {valid_task_types}")
 
-        # Ensure required fields exist. Fallback logic has been removed.
+        # Ensure required fields exist.
         required_fields = [
             "client_persona",
             "secondary_tasks",
@@ -180,7 +176,6 @@ class QueryUnderstandingAgent(BaseAgent):
                     "agents_required": analysis["required_agents"],
                     "urgency": analysis["urgency_level"]
                 },
-                "recommendations": self._generate_recommendations(completed_work_order),
                 "completed_at": datetime.now().isoformat()
             }
             
@@ -190,40 +185,7 @@ class QueryUnderstandingAgent(BaseAgent):
             self.log_activity("Error processing work request", {"error": str(e)})
             raise e
     
-    def _generate_recommendations(self, work_order: WorkOrder) -> Dict[str, Any]:
-        """Generate recommendations for handling this work order"""
-        recommendations = {
-            "workflow_suggestions": [],
-            "priority_adjustments": {},
-            "additional_considerations": []
-        }
-        
-        # Workflow suggestions based on task type
-        if work_order.primary_task == TaskType.VALUATE_PROPERTY:
-            recommendations["workflow_suggestions"] = [
-                "Start with Field Researcher for comparable sales data",
-                "Then use Appraiser for detailed valuation",
-                "Consider Strategic Advisor for market context"
-            ]
-        elif work_order.primary_task == TaskType.INVESTMENT_STRATEGY:
-            recommendations["workflow_suggestions"] = [
-                "Begin with Strategic Advisor for investment principles",
-                "Use Field Researcher for current market data",
-                "Consider Futurist for scenario analysis"
-            ]
-        elif work_order.primary_task == TaskType.MARKET_ANALYSIS:
-            recommendations["workflow_suggestions"] = [
-                "Start with Field Researcher for current data",
-                "Use Strategic Advisor for market interpretation",
-                "Consider Futurist for trends and forecasts"
-            ]
-        
-        # Priority adjustments based on client type
-        if work_order.client_type == ClientType.POLICYMAKER:
-            recommendations["priority_adjustments"]["increase_research_depth"] = True
-            recommendations["additional_considerations"].append("Ensure policy-relevant data inclusion")
-        
-        return recommendations
+
     
     def get_capabilities(self) -> Dict[str, Any]:
         """Return the capabilities of the QueryUnderstandingAgent"""
@@ -235,16 +197,14 @@ class QueryUnderstandingAgent(BaseAgent):
                 "Identify client types and personas",
                 "Classify task types and requirements",
                 "Create standardized Work Orders",
-                "Recommend specialist agent assignments",
                 "Assess urgency and priority levels"
             ],
             "input_types": ["natural_language_queries"],
-            "output_types": ["work_orders", "client_analysis", "workflow_recommendations"],
+            "output_types": ["work_orders", "client_analysis"],
             "languages_supported": ["English", "Persian"],
             "specializations": [
                 "Real estate client classification",
                 "Task type identification", 
                 "Information extraction",
-                "Workflow planning"
             ]
         } 

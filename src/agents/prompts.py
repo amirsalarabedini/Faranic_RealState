@@ -19,7 +19,7 @@ Analyze this query and respond with this exact JSON structure (replace values as
 {{
     "client_type": "one of: investor, homebuyer, policymaker, developer, researcher",
     "client_persona": "detailed description of the client based on their query and language",
-    "primary_task": "one of: compare_regions, valuate_property, market_analysis, investment_strategy, price_prediction, rent_analysis, policy_impact, scenario_analysis",
+    "primary_task": "one of: compare_regions, valuate_property, market_analysis, investment_strategy, price_prediction, rent_analysis, policy_impact, scenario_analysis, investment_recommendation, risk_assessment, market_insights, investment_prospects",
     "secondary_tasks": [],
     "processed_query": "cleaned and clarified version of the user's query",
     "key_information": {{
@@ -52,7 +52,9 @@ Guidelines:
 )
 
 # Field Researcher Agent Prompts
-FIELD_RESEARCHER_EXTRACTION_PROMPT = """
+FIELD_RESEARCHER_EXTRACTION_PROMPT = PromptTemplate(
+    input_variables=["content"],
+    template="""
 You are a real estate data analyst. Extract all numerical data, statistics, and factual information from the following content.
 
 Content to analyze:
@@ -90,9 +92,12 @@ Please provide a JSON response with the following structure:
 }}
 
 Focus on extracting actual numbers, percentages, and quantifiable data. If no data is available for a category, use null.
-"""
+""".strip()
+)
 
-FIELD_RESEARCHER_TREND_SUMMARY_PROMPT = """
+FIELD_RESEARCHER_TREND_SUMMARY_PROMPT = PromptTemplate(
+    input_variables=["numerical_analysis"],
+    template="""
 Based on the following numerical real estate data analysis, create a concise trend summary:
 
 Data: {numerical_analysis}
@@ -103,4 +108,24 @@ Provide a brief summary (2-3 sentences) highlighting:
 3. Most important findings
 
 Summary:
-""" 
+""".strip()
+)
+
+# Strategy Extraction Agent Prompts
+STRATEGY_EXTRACTION_FACTS_PROMPT = PromptTemplate(
+    input_variables=["client_type", "task"],
+    template="""
+Extract key facts and market principles for a {client_type} client considering {task}.
+
+Location: {location}
+""".strip()
+)
+
+STRATEGY_EXTRACTION_METHODS_PROMPT = PromptTemplate(
+    input_variables=["client_type", "task", "location"],
+    template="""
+Identify specific investment methods, step-by-step strategies, and practical actions for a {client_type} client considering {task}.
+
+Location: {location}
+""".strip()
+) 

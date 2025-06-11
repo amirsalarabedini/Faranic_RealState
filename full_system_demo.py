@@ -7,14 +7,9 @@ import sys
 import os
 import json
 
-# Add project root to path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 from src.agents import (
     QueryUnderstandingAgent,
-    MarketAnalysisAgent,
     GenerateReportAgent,
     Orchestrator
 )
@@ -35,13 +30,11 @@ async def run_full_system_demo():
     
     # 1. Initialize Agents
     query_understanding_agent = QueryUnderstandingAgent("query_agent_001")
-    market_analysis_agent = MarketAnalysisAgent("market_analysis_agent_001")
     generate_report_agent = GenerateReportAgent("generate_report_agent_001")
 
     # Create a dictionary of all agents for the orchestrator
     agents = {
         "QueryUnderstandingAgent": query_understanding_agent,
-        "MarketAnalysisAgent": market_analysis_agent,
         "GenerateReportAgent": generate_report_agent
     }
     
