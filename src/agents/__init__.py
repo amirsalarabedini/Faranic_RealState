@@ -1,40 +1,19 @@
-"""
-This module initializes the RISA agents and the main orchestrator.
-"""
+# src/agents/__init__.py
 
-from .core import (
-    data_ingest,
-    market_cycle,
-    query_understanding,
-    generate_report,
-    get_knowledge_retriever,
-    KnowledgeRetriever,
-    get_web_search_agent,
-    WebSearchAgent
-)
-from .analysis import (
-    valuation_analysis,
-    policy_simulation,
-    investment_strategy,
-    rental_market,
-    macro_analysis
-)
-from .routing import orchestrator, create_risa_graph
+# Core Agents
+from .core.base_agent import BaseAgent
+from .core.data_ingest_agent import DataIngestAgent
+from .core.market_cycle_agent import MarketCycleAgent
+from .core.query_understanding_agent import QueryUnderstandingAgent
+from .core.generate_report_agent import GenerateReportAgent
 
-__all__ = [
-    'data_ingest',
-    'market_cycle',
-    'query_understanding',
-    'generate_report',
-    'get_knowledge_retriever',
-    'KnowledgeRetriever',
-    'get_web_search_agent',
-    'WebSearchAgent',
-    'valuation_analysis',
-    'policy_simulation',
-    'investment_strategy',
-    'rental_market',
-    'macro_analysis',
-    'orchestrator',
-    'create_risa_graph'
-] 
+# Analysis Agents
+from .analysis.valuation_analysis import ValuationAnalysisAgent
+from .analysis.macro_analysis import MacroAnalysisAgent
+from .analysis.rental_market import RentalMarketAnalysisAgent
+from .analysis.investment_strategy import InvestmentStrategyAgent
+from .analysis.policy_simulation import PolicySimulationAgent
+from .analysis.market_analysis import MarketAnalysisAgent
+
+# Routing
+from .routing.orchestrator import Orchestrator 

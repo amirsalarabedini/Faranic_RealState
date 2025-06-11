@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 # Add the project root to Python path to enable proper imports
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../../'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -15,16 +15,6 @@ if project_root not in sys.path:
 dotenv_path = os.path.join(project_root, '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
-# Add the current directory to Python path to import local open_deep_research modules
-current_dir = os.path.dirname(__file__)
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
-
-# Add the parent directory to access the open_deep_research package
-parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-from langchain.chat_models import init_chat_model
 from src.configs.llm_config import get_default_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -34,7 +24,7 @@ from langgraph.graph import START, END, StateGraph
 from langgraph.types import interrupt, Command
 from langgraph.checkpoint.memory import MemorySaver
 
-from state import (
+from src.agents.utils.web_deep_research.state import (
     ReportStateInput,
     ReportStateOutput,
     Sections,
@@ -44,7 +34,7 @@ from state import (
     Queries,
     Feedback
 )
-from prompts import (
+from src.agents.utils.web_deep_research.prompts import (
     report_planner_query_writer_instructions,
     report_planner_instructions,
     query_writer_instructions, 
@@ -53,8 +43,8 @@ from prompts import (
     section_grader_instructions,
     section_writer_inputs
 )
-from configuration import Configuration
-from utils import (
+from src.agents.utils.web_deep_research.configuration import Configuration
+from src.agents.utils.web_deep_research.utils import (
     format_sections, 
     get_config_value, 
     get_search_params, 

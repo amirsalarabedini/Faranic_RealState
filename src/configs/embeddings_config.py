@@ -57,46 +57,31 @@ EMBEDDINGS_PROVIDERS = {
     
 }
 
-# Default configuration - can be overridden by environment variables
-DEFAULT_EMBEDDINGS_CONFIG = {
-    "base_url": "https://api.metisai.ir/openai/v1",  # Use Metis API
-    "provider": os.getenv("EMBEDDINGS_PROVIDER", "openai"),
-    "model": os.getenv("EMBEDDINGS_MODEL", "text-embedding-3-small"),
-    "chunk_size": int(os.getenv("EMBEDDINGS_CHUNK_SIZE", "1000"))
-}
-
 def get_embeddings(
-    base_url: Optional[str] = None,
-    provider: Optional[str] = None,
-    model: Optional[str] = None,
-    chunk_size: Optional[int] = None,
-    **kwargs
-):
+    provider: str,
+    model: str,
+    base_url: Optional[str] = None
+) -> Embeddings:
     """
     Factory function to get an embeddings instance based on provider and model.
     
     Args:
-        base_url: API base URL
         provider: Embeddings provider ('openai')
         model: Specific model name
-        chunk_size: Chunk size for embeddings
-        **kwargs: Additional model parameters
+        base_url: API base URL
     
     Returns:
         Embeddings instance
     """
-    # Use provided values or fall back to defaults
-    base_url = base_url or DEFAULT_EMBEDDINGS_CONFIG["base_url"]
-    provider = provider or DEFAULT_EMBEDDINGS_CONFIG["provider"]
-    model = model or DEFAULT_EMBEDDINGS_CONFIG["model"]
-    chunk_size = chunk_size if chunk_size is not None else DEFAULT_EMBEDDINGS_CONFIG["chunk_size"]
-    
     # Validate provider
     if provider not in EMBEDDINGS_PROVIDERS:
         raise ValueError(f"Unsupported provider: {provider}. Available: {list(EMBEDDINGS_PROVIDERS.keys())}")
     
     provider_config = EMBEDDINGS_PROVIDERS[provider]
     
+    if base_url is None:
+        base_url = provider_config.get("base_url")
+
     # Validate model for the provider
     if model not in provider_config["models"]:
         available_models = list(provider_config["models"].keys())
@@ -137,21 +122,15 @@ def list_available_embeddings_models() -> Dict[str, list]:
         for provider, config in EMBEDDINGS_PROVIDERS.items()
     }
 
-def get_current_embeddings_config() -> Dict[str, Any]:
-    """
-    Get the current embeddings configuration.
-    
-    Returns:
-        Current configuration dictionary
-    """
-    return DEFAULT_EMBEDDINGS_CONFIG.copy()
-
 # Convenience function for getting default embeddings
-def get_default_embeddings():
-    """Get embeddings with default configuration."""
-    return get_embeddings()
+def get_default_embeddings() -> Embeddings:
+    """Get embeddings with default configuration from environment variables."""
+    provider = os.getenv("EMBEDDINGS_PROVIDER", "openai")
+    model = os.getenv("EMBEDDINGS_MODEL", "text-embedding-3-small")
+    base_url = os.getenv("EMBEDDINGS_BASE_URL", "https://api.metisai.ir/openai/v1")
+    return get_embeddings(provider=provider, model=model, base_url=base_url)
 
 # For backward compatibility and specific use cases
-def get_openai_embeddings(model: str = "text-embedding-3-small", chunk_size: int = 1000):
+def get_openai_embeddings(model: str = "text-embedding-3-small") -> Embeddings:
     """Get OpenAI embeddings instance."""
-    return get_embeddings(provider="openai", model=model, chunk_size=chunk_size) 
+    return get_embeddings(provider="openai", model=model) 

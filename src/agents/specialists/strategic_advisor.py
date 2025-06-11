@@ -31,15 +31,11 @@ class InvestmentStrategyAgent(BaseAgent):
         self.knowledge_agent = get_knowledge_agent()
         self.log_activity("Strategic Advisor Initialized with Knowledge Graph")
 
-    async def get_strategic_advice(self, work_order: WorkOrder, context: str) -> Dict[str, Any]:
+    async def get_strategic_advice(self, work_order: WorkOrder) -> Dict[str, Any]:
         """
-        Query the knowledge base for strategic advice using the knowledge graph, with added context.
+        Query the knowledge base for strategic advice using the knowledge graph.
         """
-        query = f"""Given the following context, what is the best investment strategy for a {work_order.client_type.value} client regarding {work_order.primary_task.value} for a property in {work_order.property_specs.location if work_order.property_specs else 'Iran'}?
-
-Context:
-{context}
-"""
+        query = f"Based on our internal knowledge, what is the best investment strategy for a {work_order.client_type.value} client regarding {work_order.primary_task.value} for a property in {work_order.property_specs.location if work_order.property_specs else 'Iran'}?"
         
         self.log_activity("Invoking Knowledge Graph", {"query": query})
         
@@ -68,10 +64,7 @@ Context:
         """
         self.log_activity("Processing strategic advice request", {"order_id": work_order.order_id})
         
-        # Extract context from the incoming message
-        context = request_message.content.get("context", "No additional context provided.")
-        
-        advice_data = await self.get_strategic_advice(work_order, context)
+        advice_data = await self.get_strategic_advice(work_order)
         
         return {
             "agent_type": self.agent_type,

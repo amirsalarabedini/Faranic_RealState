@@ -1,11 +1,3 @@
-"""
-RISA Routing Module
-Handles orchestration and routing of analysis agents
-"""
+# src/agents/routing/__init__.py
 
-from .orchestrator import orchestrator, create_risa_graph
-
-__all__ = [
-    'orchestrator',
-    'create_risa_graph'
-] 
+from .orchestrator import Orchestrator

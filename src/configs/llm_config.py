@@ -31,19 +31,11 @@ LLM_PROVIDERS = {
     }
 }
 
-# Default configuration - can be overridden by environment variables
-DEFAULT_CONFIG = {
-    "base_url": "https://openrouter.ai/api/v1",
-    "provider": os.getenv("LLM_PROVIDER", "openai"),
-    "model": os.getenv("LLM_MODEL", "gpt-4.1-mini"),
-    "temperature": float(os.getenv("LLM_TEMPERATURE", "0.1"))
-}
-
 def get_llm(
+    provider: str,
+    model: str,
+    temperature: float = 0.1,
     base_url: Optional[str] = None,
-    provider: Optional[str] = None,
-    model: Optional[str] = None,
-    temperature: Optional[float] = None,
     **kwargs
 ):
     """
@@ -53,22 +45,21 @@ def get_llm(
         provider: LLM provider ('openai', 'gemini')
         model: Specific model name
         temperature: Model temperature
+        base_url: Optional base URL to override provider default
         **kwargs: Additional model parameters
     
     Returns:
         LLM instance
     """
-    # Use provided values or fall back to defaults
-    base_url = base_url or DEFAULT_CONFIG["base_url"]
-    provider = provider or DEFAULT_CONFIG["provider"]
-    model = model or DEFAULT_CONFIG["model"]
-    temperature = temperature if temperature is not None else DEFAULT_CONFIG["temperature"]
-    
     # Validate provider
     if provider not in LLM_PROVIDERS:
         raise ValueError(f"Unsupported provider: {provider}. Available: {list(LLM_PROVIDERS.keys())}")
     
     provider_config = LLM_PROVIDERS[provider]
+
+    # Use provider's base_url if not explicitly provided
+    if base_url is None:
+        base_url = provider_config.get("base_url")
     
     # Validate model for the provider
     if model not in provider_config["models"]:
@@ -117,19 +108,13 @@ def list_available_models() -> Dict[str, list]:
         for provider, config in LLM_PROVIDERS.items()
     }
 
-def get_current_config() -> Dict[str, Any]:
-    """
-    Get the current LLM configuration.
-    
-    Returns:
-        Current configuration dictionary
-    """
-    return DEFAULT_CONFIG.copy()
-
 # Convenience function for getting default LLM
 def get_default_llm():
-    """Get LLM with default configuration."""
-    return get_llm()
+    """Get LLM with default configuration from environment variables."""
+    provider = os.getenv("LLM_PROVIDER", "openai")
+    model = os.getenv("LLM_MODEL", "gpt-4.1-mini")
+    temperature = float(os.getenv("LLM_TEMPERATURE", "0.1"))
+    return get_llm(provider=provider, model=model, temperature=temperature)
 
 # For backward compatibility and specific use cases
 def get_openai_llm(model: str = "gpt-3.5-turbo", temperature: float = 0.1):

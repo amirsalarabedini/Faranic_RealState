@@ -20,16 +20,11 @@ if project_root not in sys.path:
 dotenv_path = os.path.join(project_root, '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
-# Add the current directory to the path to allow for local imports
-current_dir = os.path.dirname(__file__)
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
-
 from src.configs.llm_config import get_default_llm
-from src.configs.embeddings_config import get_default_embeddings, get_current_embeddings_config
-from state import AgentState
-from prompts import GRADE_PROMPT, REWRITE_PROMPT, GENERATE_PROMPT
-from configuration import Configuration
+from src.configs.embeddings_config import get_default_embeddings
+from .state import AgentState
+from .prompts import GRADE_PROMPT, REWRITE_PROMPT, GENERATE_PROMPT
+from .configuration import Configuration
 
 # --- RAG System State ---
 _rag_initialized = False
@@ -38,7 +33,7 @@ _retriever_tool = None
 _response_model = None
 
 def _initialize_rag_system(
-    knowledge_file_path: str = "/Users/mac/Desktop/Faranic_RealState/data/raw/Sarmaye maskan-compressed.mdss",
+    knowledge_file_path: str = "data/raw/Sarmaye maskan-compressed.mdss",
     vector_store_path: str = "data/processed/faiss_index"
 ):
     """
@@ -68,8 +63,7 @@ def _initialize_rag_system(
         # Otherwise, create it from the knowledge base
         else:
             print("💾 FAISS index not found. Creating a new one. This might take a while...")
-            embeddings_config = get_current_embeddings_config()
-            chunk_size = embeddings_config.get("chunk_size", 1000)
+            chunk_size = int(os.getenv("EMBEDDINGS_CHUNK_SIZE", "1000"))
             
             full_knowledge_path = os.path.join(project_root, knowledge_file_path)
             
