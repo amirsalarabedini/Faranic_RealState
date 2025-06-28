@@ -127,6 +127,13 @@ section_writer_instructions = """Write one section of a research report.
 - Use ## for section title (Markdown format)
 </Writing Guidelines>
 
+<Data Accuracy Rules>
+- Today's date is {today}. Your knowledge cutoff is this date.
+- For every data point or claim, you MUST include the corresponding time period (e.g., "as of Q2 2023").
+- Clearly distinguish between historical data, current data, and future forecasts. Use phrases like "analysts predict..." or "the forecast for 2025 suggests..." for future-looking statements.
+- DO NOT present forecasted or speculative data as if it were a fact that has already occurred.
+</Data Accuracy Rules>
+
 <Citation Rules>
 - Assign each unique URL a single citation number in your text
 - End with ### Sources that lists each source with corresponding numbers
@@ -140,6 +147,7 @@ section_writer_instructions = """Write one section of a research report.
 1. Verify that EVERY claim is grounded in the provided Source material
 2. Confirm each URL appears ONLY ONCE in the Source list
 3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
+4. CRITICAL: Check that all data points have a time period and that forecasts are clearly labeled as such.
 </Final Check>
 """
 

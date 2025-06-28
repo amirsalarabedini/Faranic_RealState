@@ -1,114 +1,99 @@
 """
 The Generate Report Agent is responsible for creating the final analysis report.
 """
+import sys
+import os
+import asyncio
+import json
+from typing import Dict, Any
 
-from src.agents.core.base_agent import BaseAgent
-from src.agents.core.work_order import WorkOrder
-from src.agents.core.agent_communication import AgentMessage
-from typing import Dict, Any, List
+# Add the project root to the Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-class GenerateReportAgent(BaseAgent):
+from src.configs.llm_config import get_default_llm
+from src.agents.prompts import FINAL_REPORT_PROMPT
+from langchain_core.messages import HumanMessage
+
+def format_strategic_advice(advice: Dict[str, Any]) -> str:
+    """Formats the structured strategic advice into a readable markdown string."""
+    markdown_sections = []
+    
+    if "market_overview" in advice:
+        markdown_sections.append(f"### Market Overview\n{advice['market_overview']}")
+    
+    if "key_opportunities" in advice and advice["key_opportunities"]:
+        opportunities = "\n".join([f"- {item}" for item in advice["key_opportunities"]])
+        markdown_sections.append(f"### Key Opportunities\n{opportunities}")
+        
+    if "potential_risks" in advice and advice["potential_risks"]:
+        risks = "\n".join([f"- {item}" for item in advice["potential_risks"]])
+        markdown_sections.append(f"### Potential Risks\n{risks}")
+
+    if "recommended_strategy" in advice and advice["recommended_strategy"]:
+        strategy = "\n".join([f"- {item}" for item in advice["recommended_strategy"]])
+        markdown_sections.append(f"### Recommended Strategy\n{strategy}")
+
+    if "success_metrics" in advice and advice["success_metrics"]:
+        metrics = "\n".join([f"- {item}" for item in advice["success_metrics"]])
+        markdown_sections.append(f"### Success Metrics\n{metrics}")
+        
+    return "\n\n".join(markdown_sections)
+
+async def run_generate_report_agent(work_order: Dict[str, Any], strategic_advice: Dict[str, Any]) -> str:
     """
     The Generate Report Agent synthesizes findings from all other agents
     into a comprehensive and well-structured final report.
     """
-    def __init__(self, agent_id: str = None):
-        super().__init__(agent_id, "GenerateReportAgent")
+    print("---Running Generate Report Agent---")
+    
+    llm = get_default_llm()
+    
+    # Format the structured advice into a readable string
+    formatted_advice = format_strategic_advice(strategic_advice)
+    
+    # Format the prompt with the work order and formatted strategic advice
+    prompt = FINAL_REPORT_PROMPT.format(
+        work_order=json.dumps(work_order, indent=2),
+        strategic_advice=formatted_advice
+    )
+    
+    messages = [HumanMessage(content=prompt)]
+    
+    # Invoke the LLM to generate the report
+    llm_response = await llm.ainvoke(messages)
+    
+    # The response should be the report string
+    report = llm_response.content if hasattr(llm_response, 'content') else str(llm_response)
+    
+    print("---Generate Report Agent Finished---")
+    return report
 
-    async def process_work_request(self, work_order: WorkOrder, request_message: AgentMessage) -> Dict[str, Any]:
-        """
-        Processes a work order to generate a final report by synthesizing
-        findings from other agents.
-        """
-        self.log_activity(
-            "Starting report generation.",
-            {"order_id": work_order.order_id, "query": work_order.raw_query}
-        )
-
-        findings = request_message.content.get("findings", [])
-
-        if not findings:
-            self.log_activity("No findings provided to generate report.", {"order_id": work_order.order_id})
-            report = {
-                "title": f"Analysis Report for query: {work_order.raw_query}",
-                "summary": "No findings were provided for this query.",
-                "sections": []
+if __name__ == '__main__':
+    async def main():
+        # Mock data for testing
+        mock_work_order = {
+            "client_type": "investor",
+            "primary_task": "investment_strategy",
+            "key_information": {
+                "location": "Tehran, Iran",
+                "budget": "500,000",
+                "property_type": "apartment"
             }
-        else:
-            report = self._generate_report_from_findings(work_order.raw_query, findings)
-
-        self.log_activity("Report generation complete.", {"order_id": work_order.order_id})
-        
-        return {
-            "agent_type": self.agent_type,
-            "task_completed": "report_generation",
-            "report": report
         }
-
-    def _generate_report_from_findings(self, query: str, findings: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Generates a structured report from a list of findings.
-
-        This method assumes that each finding is a dictionary, potentially
-        containing keys like 'agent_type', 'task_completed', and 'result'.
-        The 'result' dictionary may contain a 'summary' for the executive summary.
-        """
-        title = f"Comprehensive Analysis Report for: '{query}'"
         
-        # Synthesize a summary from all findings
-        summary_parts = []
-        for finding in findings:
-            # Assuming the summary is located in finding['result']['summary']
-            if isinstance(finding, dict):
-                result = finding.get("result", {})
-                if isinstance(result, dict) and "summary" in result:
-                    summary_parts.append(str(result["summary"]))
+        # Load the results from the strategic advisor to test the report generator
+        with open("strategic_advisor_result.json", "r") as f:
+            mock_strategic_advice = json.load(f)
+            
+        final_report = await run_generate_report_agent(mock_work_order, mock_strategic_advice)
+        
+        print("\n\n--- Final Report ---")
+        print(final_report)
+        
+        # Save the report to a file
+        with open("final_report.md", "w") as f:
+            f.write(final_report)
 
-        if summary_parts:
-            executive_summary = " ".join(summary_parts)
-        else:
-            executive_summary = "An executive summary could not be generated from the provided findings."
-
-        # Structure the findings into report sections
-        report_sections = []
-        for i, finding in enumerate(findings):
-            if isinstance(finding, dict):
-                agent_type = finding.get("agent_type", "Unknown Agent")
-                task = finding.get("task_completed", "undisclosed task")
-                
-                # We will use the 'result' key if present, otherwise, the whole finding.
-                content = finding.get("result", finding)
-                
-                section = {
-                    "section_title": f"Analysis by {agent_type} for {task}",
-                    "content": content
-                }
-                report_sections.append(section)
-            else:
-                # Handle cases where a finding is not a dictionary
-                report_sections.append({
-                    "section_title": f"Finding #{i + 1}",
-                    "content": str(finding)
-                })
-
-        return {
-            "title": title,
-            "summary": executive_summary,
-            "sections": report_sections
-        }
-
-    def get_capabilities(self) -> Dict[str, Any]:
-        """
-        Return the capabilities of the Generate Report Agent.
-        """
-        return {
-            "agent_type": "GenerateReportAgent",
-            "primary_function": "Final report generation",
-            "capabilities": [
-                "Synthesize findings from multiple agents.",
-                "Structure information into a coherent report.",
-                "Format the report in various formats (e.g., PDF, markdown)."
-            ],
-            "input_types": ["list_of_agent_findings"],
-            "output_types": ["final_report"]
-        } 
+    asyncio.run(main())

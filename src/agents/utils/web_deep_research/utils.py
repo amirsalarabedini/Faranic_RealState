@@ -63,7 +63,7 @@ def get_search_params(search_api: str, search_api_config: Optional[Dict[str, Any
     # Define accepted parameters for each search API
     SEARCH_API_PARAMS = {
         "exa": ["max_characters", "num_results", "include_domains", "exclude_domains", "subpages"],
-        "tavily": ["max_results", "topic"],
+        "tavily": ["max_results", "topic", "time_range"],
         "perplexity": [],  # Perplexity accepts no additional parameters
         "googlesearch": ["max_results"],
     }
@@ -171,7 +171,7 @@ async def summarize_webpage(model: BaseChatModel, content: str) -> str:
     return await chain.ainvoke({"content": content})
 
 @traceable
-async def tavily_search_async(search_queries, max_results: int = 5, topic: Literal["general", "news", "finance"] = "general", include_raw_content: bool = True):
+async def tavily_search_async(search_queries, max_results: int = 5, topic: Literal["general", "news", "finance"] = "general", time_range: Optional[str] = None, include_raw_content: bool = True):
     """
     Performs concurrent web searches with the Tavily API
 
@@ -179,6 +179,7 @@ async def tavily_search_async(search_queries, max_results: int = 5, topic: Liter
         search_queries (List[str]): List of search queries to process
         max_results (int): Maximum number of results to return
         topic (Literal["general", "news", "finance"]): Topic to filter results by
+        time_range (Optional[str]): Time range for the search
         include_raw_content (bool): Whether to include raw content in the results
 
     Returns:
@@ -208,7 +209,8 @@ async def tavily_search_async(search_queries, max_results: int = 5, topic: Liter
                     query,
                     max_results=max_results,
                     include_raw_content=include_raw_content,
-                    topic=topic
+                    topic=topic,
+                    time_range=time_range
                 )
             )
 
@@ -921,13 +923,14 @@ async def tavily_search(
         return "No valid search results found. Please try different search queries or use a different search API."
 
 
-async def select_and_execute_search(search_api: str, query_list: list[str], params_to_pass: dict) -> str:
+async def select_and_execute_search(search_api: str, query_list: list[str], params_to_pass: dict, time_range: Optional[str] = None) -> str:
     """Select and execute the appropriate search API.
     
     Args:
         search_api: Name of the search API to use
         query_list: List of search queries to execute
         params_to_pass: Parameters to pass to the search API
+        time_range: Time range for the search
         
     Returns:
         Formatted string containing search results
@@ -935,6 +938,9 @@ async def select_and_execute_search(search_api: str, query_list: list[str], para
     Raises:
         ValueError: If an unsupported search API is specified
     """
+    if time_range:
+        params_to_pass["time_range"] = time_range
+
     if search_api == "tavily":
         # Tavily search tool used with both workflow and agent 
         # and returns a formatted source string

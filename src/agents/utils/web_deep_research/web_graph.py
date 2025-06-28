@@ -88,6 +88,7 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
     search_api = get_config_value(configurable.search_api)
     search_api_config = configurable.search_api_config or {}  # Get the config dict, default to empty
     params_to_pass = get_search_params(search_api, search_api_config)  # Filter parameters
+    time_range = configurable.time_range # Get time_range from config
 
     # Convert JSON object to string if necessary
     if isinstance(report_structure, dict):
@@ -102,7 +103,7 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
         topic=topic,
         report_organization=report_structure,
         number_of_queries=number_of_queries,
-        today=get_today_str()
+        today=state.get("report_date", get_today_str())
     )
 
     # Generate queries  
@@ -113,7 +114,7 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
     query_list = [query.search_query for query in results.queries]
 
     # Search the web with parameters
-    source_str = await select_and_execute_search(search_api, query_list, params_to_pass)
+    source_str = await select_and_execute_search(search_api, query_list, params_to_pass, time_range=time_range)
 
     # Format system instructions
     system_instructions_sections = report_planner_instructions.format(topic=topic, report_organization=report_structure, context=source_str, feedback=feedback)
@@ -149,7 +150,7 @@ def route_after_planning(state: ReportState) -> Command:
     if research_sections:
         # Kick off section writing for sections that need research
         return Command(goto=[
-            Send("build_section_with_web_research", {"topic": topic, "section": s, "search_iterations": 0}) 
+            Send("build_section_with_web_research", {"topic": topic, "section": s, "search_iterations": 0, "report_date": state.get("report_date")}) 
             for s in research_sections 
         ])
     else:
@@ -186,7 +187,7 @@ async def generate_queries(state: SectionState, config: RunnableConfig):
     system_instructions = query_writer_instructions.format(topic=topic, 
                                                            section_topic=section.description, 
                                                            number_of_queries=number_of_queries,
-                                                           today=get_today_str())
+                                                           today=state.get("report_date", get_today_str()))
 
     # Generate queries  
     queries = await structured_llm.ainvoke([SystemMessage(content=system_instructions),
@@ -218,12 +219,13 @@ async def search_web(state: SectionState, config: RunnableConfig):
     search_api = get_config_value(configurable.search_api)
     search_api_config = configurable.search_api_config or {}  # Get the config dict, default to empty
     params_to_pass = get_search_params(search_api, search_api_config)  # Filter parameters
+    time_range = configurable.time_range # Get time_range from config
 
     # Web search
     query_list = [query.search_query for query in search_queries]
 
     # Search the web with parameters
-    source_str = await select_and_execute_search(search_api, query_list, params_to_pass)
+    source_str = await select_and_execute_search(search_api, query_list, params_to_pass, time_range=time_range)
 
     return {"source_str": source_str, "search_iterations": state["search_iterations"] + 1}
 
@@ -245,21 +247,23 @@ async def write_section(state: SectionState, config: RunnableConfig):
     topic = state["topic"]
     section = state["section"]
     source_str = state["source_str"]
+    report_date = state.get("report_date", get_today_str())
 
     # Format system instructions
     section_writer_inputs_formatted = section_writer_inputs.format(topic=topic, 
-                                                             section_name=section.name, 
-                                                             section_topic=section.description, 
-                                                             context=source_str, 
-                                                             section_content=section.content)
-
-    # Generate section  
-    writer_model = get_default_llm()
-
-    section_content = await writer_model.ainvoke([SystemMessage(content=section_writer_instructions),
-                                           HumanMessage(content=section_writer_inputs_formatted)])
+                                                                   section_name=section.name, 
+                                                                   section_topic=section.description, 
+                                                                   section_content=section.content,
+                                                                   context=source_str)
     
-    # Write content to the section object  
+    system_instructions = section_writer_instructions.format(today=report_date)
+
+    # Generate the section
+    writer_model = get_default_llm()
+    section_content = await writer_model.ainvoke([SystemMessage(content=system_instructions),
+                                           HumanMessage(content=section_writer_inputs_formatted)])
+
+    # Update section
     section.content = section_content.content
 
     return {"section": section}
@@ -416,7 +420,7 @@ def initiate_final_section_writing(state: ReportState):
 
     # Kick off section writing in parallel via Send() API for any sections that do not require research
     return [
-        Send("write_final_sections", {"topic": state["topic"], "section": s, "report_sections_from_research": state["report_sections_from_research"]}) 
+        Send("write_final_sections", {"topic": state["topic"], "section": s, "report_sections_from_research": state["report_sections_from_research"], "report_date": state.get("report_date")}) 
         for s in state["sections"] 
         if not s.research
     ]

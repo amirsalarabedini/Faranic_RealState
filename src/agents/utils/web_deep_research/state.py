@@ -39,6 +39,7 @@ class Feedback(BaseModel):
 
 class ReportStateInput(TypedDict):
     topic: str # Report topic
+    report_date: str # Add report_date here
     
 class ReportStateOutput(TypedDict):
     final_report: str # Final report
@@ -48,6 +49,7 @@ class ReportStateOutput(TypedDict):
 
 class ReportState(TypedDict):
     topic: str # Report topic    
+    report_date: str
     sections: list[Section] # List of report sections 
     completed_sections: Annotated[list, operator.add] # Send() API key
     report_sections_from_research: str # String of any completed sections from research to write final sections

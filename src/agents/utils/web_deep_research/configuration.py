@@ -31,6 +31,7 @@ class Configuration:
     report_structure: str = DEFAULT_REPORT_STRUCTURE # Defaults to the default report structure
     search_api: SearchAPI = SearchAPI.TAVILY # Default to TAVILY
     search_api_config: Optional[Dict[str, Any]] = None
+    time_range: Optional[str] = None # Add time_range for date-filtered searches
     process_search_results: Literal["summarize", "split_and_rerank"] | None = None
     # Summarization model for summarizing search results
     # will be used if summarize_search_results is True

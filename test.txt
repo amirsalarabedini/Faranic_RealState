@@ -1,0 +1,182 @@
+env(base) mac@MACs-MacBook-Pro Faranic_RealState % /Users/mac/Desktop/Faranic_RealState/env/
+bin/python /Users/mac/Desktop/Faranic_RealState/main.py
+--- Starting Faranic Real Estate Agent Workflow ---
+Orchestrator: Understanding user query: 'I am an investor looking to buy an apartment in Tehran. My budget is around $500,000. I am looking for a 2-bedroom, 2-bathroom apartment with a gym. I prefer a newer building.'
+Orchestrator: Work order created: {
+  "client_type": "investor",
+  "client_persona": "An investor seeking to purchase a residential apartment in Tehran, with a budget of around $500,000. The client is focused on a 2-bedroom, 2-bathroom apartment in a newer building and values amenities such as a gym. The language used is English.",
+  "primary_task": "investment_recommendation",
+  "secondary_tasks": [],
+  "processed_query": "Investor looking to buy a 2-bedroom, 2-bathroom apartment with a gym in a newer building in Tehran, with a budget of around $500,000.",
+  "key_information": {
+    "budget": 500000,
+    "location": "Tehran",
+    "timeline": null,
+    "property_type": "apartment",
+    "specific_requirements": [
+      "2 bedrooms",
+      "2 bathrooms",
+      "gym",
+      "newer building"
+    ]
+  },
+  "property_specs": {
+    "location": "Tehran",
+    "property_type": "apartment",
+    "size_sqft": null,
+    "price_range": 500000,
+    "number_of_bedrooms": 2,
+    "number_of_bathrooms": 2,
+    "amenities": [
+      "gym"
+    ],
+    "year_built": null,
+    "property_condition": "newer",
+    "special_features": []
+  },
+  "urgency_level": "normal",
+  "required_agents": [
+    "field_researcher",
+    "strategic_advisor"
+  ],
+  "deliverables": [
+    "analysis_report"
+  ],
+  "work_order_id": "8d218de6-3bf2-4570-acdc-4eb3b8364045",
+  "timestamp": "2025-06-28T07:14:44.168748"
+}
+---Running Strategic Advisor---
+---Running Field Researcher for topic: Real estate investment strategy for a investor in Tehran focusing on investment_recommendation. Property details: location: Tehran, property type: apartment, price range: 500000, number of bedrooms: 2, number of bathrooms: 2, amenities: ['gym'], property condition: newer---
+---Field Researcher: Report generated, now extracting data...---
+---Field Researcher: Data extracted, now generating summary...---
+---Field Researcher: Process complete.---
+✅ Loading existing FAISS index from /Users/mac/Desktop/Faranic_RealState/data/processed/faiss_index
+✅ RAG system initialized successfully
+---DECIDING TO RETRIEVE---
+---RETRIEVING KNOWLEDGE---
+---GRADING DOCUMENTS---
+---GENERATING ANSWER---
+{'query': 'Extract key facts and market principles for a investor client considering investment_recommendation.\n\nLocation: Tehran', 'messages': [{'role': 'user', 'content': 'Extract key facts and market principles for a investor client considering investment_recommendation.\n\nLocation: Tehran'}], 'documents': '[^0]\n[^0]:    ۱-این آمار به صورت فصلی توسط بانک مرکزی اعلام میشود، ولی فاصله زمانی اعلام آن زیاد است. ۲-برای مقایسه، سایت زیر بررسی شود: http://www.fhfa.gov\n\nشهرهای بزرگ کشور به\u200cخصوص تهران، هویدا است. ساختمان\u200cهایی که با تغییرات و تعمیرات جزئی می\u200cتوانند مورد بهره\u200cبرداری مناسب قرار گیرند، تخریب می\u200cشوند تا طبقه\u200cای بر آن افزوده شود و در این شرایط است که ساختمان\u200cها به\u200cعنوان بخشی از ثروت ملی از بین می\u200cروند.\n\n۱۱- ضرورت تغییر در نظام درآمدی شهرداری\u200cها و تمرکز کمتر بر روی درآمد ناشی از صدور جواز، فروش تراکم، تغییر کاربری و مواردی چون آن.\n\n۱۲- گسترش سرمایه\u200cگذاری در بخش مسکن از طریق انتشار اوراق رهن و بهادار و بازار مربوطه. صندوق\u200cهای زمین و ساختمان، صندوق\u200cهای اعطای وام خرید مسکن و مانند آن.\n\n$$\n\\begin{aligned}\n& \\text { II } \\\\\n& \\text { 19 } \\\\\n& \\text { ٢٢ } \\\\\n& \\text { ت ت ت }\n\\end{aligned}\n$$\n\n$$\n\\begin{aligned}\n& \\text {. } \\\\\n& \\text { روند قيمتي مسكن } \\\\\n& \\text { رشد تاريخي قيمت مسكن. اجاره بها و تورم عمومي } \\\\\n& \\text { رشد تاريخي قيمت مسكن در مناطق مختلف شهر تهران } \\\\\n& \\text { ٢٢ } \\\\\n& \\text { ٢A } \\\\\n& \\text { ت ت ت }\n\\end{aligned}\n$$\n\n$$\n\\begin{aligned}\n& \\text { ٢V }\n\\end{aligned}\n$$\n\n$$\n\\begin{aligned}\n& \\text { ٢A } \\\\\n& \\text { ٢V }\n\\end{aligned}\n$$\n\n۸۸ محاسبه بازدهی در اپیزود رونق شدید\n۹۰ محاسبه بازدهی در اپیزود رکود شدید\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n**1.000.000**\n\n\n\n۱۰- مقایسه دلاری اعداد ثروت سهام ایرانی\u200cها با دنیا و کشورهای توسعه\u200cیافته می\u200cتواند جالب باشد.\n\n- کل ارزش به\u200cروزرس اوراق به\u200cدار تهران و فرابور س در فروردین ۱۳۹۳ در حدود ۴۵۰ هزار میلیارد تومان است که معادل ۱۵۰ میلیارد دلار است که تنها ۳۰ میلیارد دلار از آن متعلق به بخش خصوصی است.\n\n- ارزش بازار تعداد زیادی از شرکت\u200cهای مطرح و بزرگ دنیا به تنهایی بیشتر از کل ارزش به\u200cروزرس و فرابور س ایران است. برای نمونه ارزش چند شرکت در مارس ۲۰۱۴ به شرح جدول زیر است:\n\n۹- **تناسب افق سرمایه گذاری با انتظارات سرمایه گذاران ایرانی:** فرایند تولید و\nفروش محصول در بخش مسکن، میان مدت و حتی کوتاه مدت محسوب میشود (در\nمقایسه با سرمایه گذاری صنعتی). با توجه به آنکه سیکلهای اقتصادی در ایران و تغییر\nو تحولات آن بسیار سریع است، سرمایه گذاری در بخش ساخت وساز مسکن با افق\nکوتاه مدت برای بسیاری از افراد از جذابیت بالاتری نسبت به صنعت (که باید با دید\nبلند مدت در آن به فعالیت پرداخت)، برخوردار است. همچنین امکان فعالیت در حوزه\nساخت وساز با سرمایه های اندک نیز وجود دارد که مزیت دیگری محسوب میشود.\n\n۱۰- **خصوصی تریسن بخش اقتصاد ایران:** به صورت تاریخی ساخت و مساز\nمسکن، خصوصی ترین بخش اقتصادی کشور بوده است. در مقابل صنایع و کسب\n\n. $\\cdot$ در صورتى كه در تهران در حدود ٢٠٠ هزار واحد در حال سـاخت، سـاخته شود، با قيمت متوسط مترى ٥ ميليون تومان براى واحد نوساز و متراز متوسط ١٠٠ مترى، ميزان سـرمايه جديد لازم سـالانه براى خريد اين ميزان واحد نوساز، ١٠٠', 'answer': "Key facts and market principles for an investor considering investment in Tehran's real estate market based on the provided context are:\n\n1. **Market Dynamics and Building Trends**:  \n   - In Tehran, many buildings that could be utilized with minor repairs are instead demolished to add additional floors. This practice leads to the loss of buildings as part of the national wealth.\n\n2. **Investment Horizon and Economic Cycles**:  \n   - Real estate production and sales in Tehran are considered medium to short-term investments compared to industrial investments, which require a longer-term outlook.  \n   - Due to rapid economic cycles and changes in Iran, short-term investment horizons in housing construction are more attractive to many investors.  \n   - It is possible to engage in housing construction with relatively small capital, which is an advantage for investors.\n\n3. **Private Sector Dominance**:  \n   - Historically, housing construction is the most private sector-oriented part of Iran’s economy, more so than industries.\n\n4. **Municipal Revenue and Policy Recommendations**:  \n   - There is a need to reform the municipal revenue system to reduce reliance on income from issuing permits, selling density rights, and changing land use.\n\n5. **Financial Market Development**:  \n   - Expansion of investment in housing through mortgage-backed securities, real estate investment funds, and housing loan funds is recommended to support the sector.\n\n6. **Scale of Investment Needed**:  \n   - Approximately 200,000 housing units are under construction in Tehran.  \n   - With an average price of 5 million IRR per square meter and an average unit size of 100 square meters, the annual new capital required to purchase these new units is about 100 trillion IRR.\n\n7. **Comparative Wealth and Market Size**:  \n   - The total updated value of Tehran and Iran’s over-the-counter and stock market in early 2014 was about 450 trillion IRR (~150 billion USD), with only 30 billion USD belonging to the private sector.  \n   - The market value of many large global companies exceeds the entire Iranian stock market value.\n\n**Summary for Investor Recommendation**:  \n- Investing in Tehran’s housing market offers medium to short-term opportunities with relatively lower capital requirements compared to industrial investments.  \n- The market is private-sector driven and undergoing structural changes, including potential reforms in municipal revenue and financial instruments supporting housing investment.  \n- The scale of ongoing construction and capital requirements indicates significant market activity.  \n- Investors should consider the rapid economic cycles and the trend of redevelopment (demolition and adding floors) when planning investments.\n\nThis information can help an investor understand the market environment, investment horizon, capital needs, and structural factors influencing Tehran’s real estate sector.", 'iteration': 1, 'rewritten_query': 'investment recommendation Tehran', 'grade': 'yes', 'max_iterations': 3}
+---DECIDING TO RETRIEVE---
+---RETRIEVING KNOWLEDGE---
+---GRADING DOCUMENTS---
+---GENERATING ANSWER---
+---Strategic Advisor Finished---
+Orchestrator: Strategic advice received. Generating final report...
+---Running Generate Report Agent---
+---Generate Report Agent Finished---
+--- Faranic Real Estate Agent Workflow Complete ---
+Final report saved to: final_investment_report.md
+
+--- Final Report Preview ---
+---
+**Investment Report**  
+**Client Work Order ID:** 8d218de6-3bf2-4570-acdc-4eb3b8364045  
+**Date:** June 28, 2025  
+
+---
+
+### 1. Executive Summary
+
+This report addresses the investment objectives of a client seeking to purchase a residential apartment in Tehran with a budget of approximately $500,000. The client’s focus is on acquiring a newer 2-bedroom, 2-bathroom apartment featuring gym amenities. Our analysis of Tehran’s mid-2025 residential market reveals strong price appreciation, particularly in upscale northern districts such as Elahiyeh, Niavaran, and Zafaraniyeh, where demand for modern apartments with amenities is robust. Despite economic volatility and reduced transaction volumes, targeted investments in these neighborhoods near metro stations offer attractive capital growth and moderate rental yields. This report outlines strategic recommendations to optimize the client’s investment aligned with market realities and risk factors.
+
+---
+
+### 2. Client Profile & Objectives
+
+**Client Type:** Investor  
+**Investment Goal:** Purchase a residential apartment in Tehran  
+**Budget:** Approximately $500,000  
+**Property Specifications:**  
+- Apartment  
+- 2 bedrooms  
+- 2 bathrooms  
+- Located in a newer building  
+- Includes gym amenities  
+
+**Additional Preferences:**  
+- Focus on properties with modern amenities and proximity to metro stations  
+- Interest in stable capital appreciation and rental income potential  
+- Language preference: English  
+
+---
+
+### 3. Market Analysis & Principles
+
+**Market Overview:**  
+- Tehran’s residential real estate market is experiencing strong price growth of approximately 16.8% year-over-year, driven by inflation exceeding 35% and currency depreciation of 35% in 2024.  
+- Newer apartments command prices between $1,100 and $1,600 per square meter, with luxury northern districts (Elahiyeh, Niavaran, Zafaraniyeh) reaching up to $2,000 per square meter.  
+- Transaction volumes have declined sharply by 75%, reflecting affordability challenges and economic uncertainty.  
+- Demand is concentrated on smaller, modern apartments (under 80 sqm) with amenities such as gyms and proximity to metro stations, especially in upscale northern neighborhoods.  
+- Rental yields range moderately between 4.3% and 7%, supporting income generation alongside capital appreciation.  
+- The market outlook is neutral and cautious, with legal complexities for foreign investors and a need for risk management through diversification and local expertise.
+
+**Key Market Principles:**  
+- **Location Premium:** Northern upscale neighborhoods offer the strongest demand and price premiums.  
+- **Amenities Matter:** Gyms and proximity to metro stations significantly enhance property value and rental appeal.  
+- **Liquidity Constraints:** Reduced transaction volumes necessitate careful timing and due diligence.  
+- **Legal Complexity:** Ownership regulations and limited mortgage availability require engagement with local experts.  
+- **Economic Volatility:** Inflation and currency risks impact purchasing power and market stability.  
+- **Urban Renewal:** Redevelopment trends provide opportunities for medium to short-term value addition.
+
+---
+
+### 4. Recommended Investment Strategies
+
+**Target Property Profile:**  
+- Newer 2-bedroom, 2-bathroom apartments with gym facilities.  
+- Located in northern upscale districts: Elahiyeh, Niavaran, Zafaraniyeh.  
+- Preferably within walking distance to metro stations to capture a 20% price premium and enhance rental demand.  
+
+**Investment Approach:**  
+- **Engage Local Expertise:** Retain trusted real estate agents and legal advisors to navigate ownership regulations and transaction complexities, especially if the client is a foreign investor.  
+- **Budget Management:** Aim to acquire properties within or below the $500,000 budget to maximize value and maintain flexibility.  
+- **Balanced Return Focus:** Target properties offering rental yields between 4.3% and 7%, balancing income with capital appreciation potential.  
+- **Medium to Short-Term Horizon:** Leverage Tehran’s redevelopment trends and economic cycles to capitalize on urban renewal and price growth.  
+- **Risk Mitigation:** Diversify exposure where possible, avoid frequent trading, and allocate sufficient time for market research and negotiation.  
+- **Monitor Market Conditions:** Stay informed on government policies, sanctions, and economic indicators to optimize timing of purchase and potential resale.  
+- **Leverage Financial Instruments:** Explore real estate funds or mortgage-backed securities to improve liquidity and diversify risk if accessible.  
+
+---
+
+### 5. Next Steps & Recommendations
+
+1. **Property Search & Due Diligence:**  
+   - Initiate targeted property searches in Elahiyeh, Niavaran, and Zafaraniyeh focusing on newer buildings with gym amenities near metro stations.  
+   - Conduct thorough inspections and verify property conditions and legal status.  
+
+2. **Engage Local Professionals:**  
+   - Retain reputable local real estate agents with expertise in upscale northern Tehran neighborhoods.  
+   - Consult legal counsel specializing in Tehran real estate to ensure compliance with ownership and transaction regulations.  
+
+3. **Financial Planning:**  
+   - Confirm financing options and budget allocation, considering currency fluctuations and transaction costs.  
+   - Evaluate rental income potential and vacancy risks to ensure alignment with investment goals.  
+
+4. **Market Monitoring:**  
+   - Track market trends, inflation rates, and regulatory changes regularly.  
+   - Time the purchase to coincide with favorable market conditions, ideally at the end of mild recessions or start of growth phases.  
+
+5. **Transaction Execution:**  
+   - Negotiate purchase price carefully to stay within budget and maximize value.  
+   - Plan for a smooth transaction process to minimize delays and costs.  
+
+6. **Post-Purchase Management:**  
+   - Implement property management strategies to maintain low vacancy and tenant satisfaction.  
+   - Monitor property performance against success metrics and adjust strategy as needed.  
+
+---
+
+### 6. Disclaimer
+
+This report is provided for informational purposes only and does not constitute financial, legal, or investment advice. Real estate investments carry inherent risks, including market volatility, economic fluctuations, legal complexities, and liquidity constraints. The client is advised to conduct independent due diligence and consult with qualified professionals before making any investment decisions. Market conditions may change rapidly, and past performance is not indicative of future results.
+
+---
+
+**Prepared by:**  
+Senior Real Estate Analyst  
+[Your Company Name]  
+
+For further inquiries or assistance, please contact [Your Contact Information].
+
+---

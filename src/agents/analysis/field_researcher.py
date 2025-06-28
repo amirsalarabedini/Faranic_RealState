@@ -10,229 +10,158 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import asyncio
 import json
-
-from src.agents.core import BaseAgent, AgentState, WorkOrder, TaskType, ClientType
-from langchain_core.messages import HumanMessage
+from datetime import datetime
+import re
 
 # Import the autonomous deep research agent and its configuration
 from src.agents.utils.web_deep_research.web_graph import get_deep_research_agent
 from src.agents.utils.web_deep_research.configuration import Configuration as WebResearchConfig
 from src.agents.utils.web_deep_research.utils import get_today_str
 from src.agents.prompts import FIELD_RESEARCHER_EXTRACTION_PROMPT, FIELD_RESEARCHER_TREND_SUMMARY_PROMPT
+from src.configs.llm_config import get_default_llm
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import JsonOutputParser
+from src.agents.analysis.models.field_researcher_models import RealEstateAnalysis
 
 
+"""
+The Field Researcher Agent performs deep, autonomous web research on a given topic
+by leveraging the web_graph agent, built on the LangGraph framework.
+"""
 
-class FieldResearcherAgent(BaseAgent):
-    """
-    The Field Researcher Agent performs deep, autonomous web research on a given topic
-    by leveraging the web_graph agent, built on the LangGraph framework.
-    """
+def format_date_range(date_str: Optional[str]) -> Optional[str]:
+    """Formats a date or date range string into MM/DD/YYYY-MM/DD/YYYY format."""
+    if not date_str:
+        return None
     
-    def __init__(self, agent_id: str = None):
-        super().__init__(agent_id, "FieldResearcherAgent")
-        self.deep_research_agent = get_deep_research_agent()
-        self._log_activity("Field Researcher Initialized with Deep Research Graph")
+    # Normalize separators
+    date_str = re.sub(r'[,;/\s]+', '-', date_str)
+    parts = date_str.split('-')
+    
+    # Clean up parts to be just numbers
+    cleaned_parts = []
+    for part in parts:
+        cleaned_parts.extend(re.findall(r'\d+', part))
 
-    def get_capabilities(self) -> Dict[str, Any]:
-        """
-        Returns a dictionary of the agent's capabilities.
-        """
-        return {
-            "name": self.agent_type,
-            "tasks": [
-                {
-                    "task_type": TaskType.DEEP_DIVE_RESEARCH.name,
-                    "description": "Performs in-depth web research on a given topic and returns a structured report.",
-                    "parameters": {
-                        "query": "The research topic or question."
-                    }
-                },
-                {
-                    "task_type": TaskType.TREND_ANALYSIS.name,
-                    "description": "Analyzes market or topic trends based on web research and returns a summary.",
-                    "parameters": {
-                        "query": "The topic for trend analysis."
-                    }
-                }
-            ],
-            "description": "An autonomous agent that specializes in deep web research to extract information and identify trends."
-        }
-
-    def _can_handle_task(self, work_order: WorkOrder) -> bool:
-        """
-        Check if this agent can handle the given work order's primary task.
-        """
-        return work_order.primary_task in [TaskType.DEEP_DIVE_RESEARCH, TaskType.TREND_ANALYSIS]
-
-    async def get_llm_response(self, prompt: str) -> str:
-        """
-        Helper function to get a response from the configured LLM.
-        """
-        self._log_activity("Invoking LLM for response generation.")
-        response = await self.llm.ainvoke(prompt)
-        return response.content
-
-    async def process_work_request(self, work_order: WorkOrder, state: AgentState) -> Dict[str, Any]:
-        """
-        Processes a work request based on the task type. This method is called by the BaseAgent's workflow.
-        """
-        self._log_activity(f"Processing work request with task type: {work_order.primary_task.name}")
-
-        if work_order.primary_task == TaskType.DEEP_DIVE_RESEARCH:
-            return await self._perform_deep_dive_research(work_order)
-        elif work_order.primary_task == TaskType.TREND_ANALYSIS:
-            return await self._analyze_trends(work_order)
-        else:
-            # This case should ideally not be reached due to `_can_handle_task` validation
-            error_msg = f"Unknown task type: {work_order.primary_task.name}"
-            self._log_activity(error_msg, details={"level": "error"})
-            return {"error": error_msg}
-
-    async def _perform_deep_dive_research(self, work_order: WorkOrder) -> Dict[str, Any]:
-        """
-        Performs a deep dive research on a given query, extracts key information,
-        and returns it as structured data.
-        """
-        research_query = work_order.processed_query
-        if not research_query:
-            return {"error": "No research query provided for deep dive."}
-
-        self._log_activity(f"Starting deep dive research for: '{research_query}'")
-        
-        research_result = await self._run_deep_research(research_query)
-        if isinstance(research_result, dict) and "error" in research_result:
-            return research_result
-
-        research_report = research_result
-
-        self._log_activity("Deep dive research complete. Extracting key information.")
-        extraction_prompt = FIELD_RESEARCHER_EXTRACTION_PROMPT.format(
-            research_report=research_report,
-            research_query=research_query
-        )
-
-        llm_response_str = ""
+    if len(cleaned_parts) == 6: # Range like D-M-Y-D-M-Y
         try:
-            llm_response_str = await self.get_llm_response(extraction_prompt)
-            # Find the JSON part of the response, resilient to markdown code blocks
-            json_start = llm_response_str.find('{')
-            json_end = llm_response_str.rfind('}') + 1
-            if json_start == -1 or json_end == 0:
-                raise ValueError("No JSON object found in the response.")
-            json_part = llm_response_str[json_start:json_end]
-            extracted_data = json.loads(json_part)
-            self._log_activity("Successfully extracted and parsed structured data.")
-            return {"status": "success", "data": extracted_data}
-        except (json.JSONDecodeError, ValueError) as e:
-            error_msg = f"Failed to parse extracted data as JSON. Error: {e}"
-            self._log_activity(error_msg, details={"level": "error"})
-            return {"error": error_msg, "raw_data": llm_response_str}
-
-    async def _analyze_trends(self, work_order: WorkOrder) -> Dict[str, Any]:
-        """
-        Analyzes trends based on a research query. It performs research and then
-        summarizes the findings to identify trends.
-        """
-        research_query = work_order.processed_query
-        if not research_query:
-            return {"error": "No research query provided for trend analysis."}
-
-        self._log_activity(f"Starting trend analysis for: '{research_query}'")
-
-        research_result = await self._run_deep_research(research_query)
-        if isinstance(research_result, dict) and "error" in research_result:
-            return research_result
-
-        research_report = research_result
-        
-        self._log_activity("Trend research complete. Summarizing trends.")
-        summary_prompt = FIELD_RESEARCHER_TREND_SUMMARY_PROMPT.format(
-            research_report=research_report,
-            research_query=research_query
-        )
-        
-        trend_summary = await self.get_llm_response(summary_prompt)
-        self._log_activity("Trend summarization complete.")
-        return {"status": "success", "summary": trend_summary}
-
-    async def _run_deep_research(self, research_query: str) -> str | Dict[str, Any]:
-        """
-        A helper function to run the deep research agent and get the final report.
-        Returns the report as a string or an error dictionary.
-        """
-        self._log_activity(f"Invoking deep research for query: {research_query}")
-        config = {
-            "configurable": {
-                "thread_id": f"research_{get_today_str()}",
-                "research_topic": research_query,
-            }
-        }
-        
-        # The input to the stream should be a dictionary, often with a 'messages' key.
-        initial_input = {"messages": [HumanMessage(content=research_query)]}
-        
-        final_report = ""
+            start_day, start_month, start_year, end_day, end_month, end_year = map(int, cleaned_parts)
+            start_date = datetime(start_year, start_month, start_day)
+            end_date = datetime(end_year, end_month, end_day)
+            return f"{start_date.strftime('%m/%d/%Y')}-{end_date.strftime('%m/%d/%Y')}"
+        except ValueError:
+            return date_str # Return original if parsing fails
+    elif len(cleaned_parts) == 3: # Single date D-M-Y
         try:
-            # The deep research agent streams back events. We process them to find the final report.
-            for event in self.deep_research_agent.stream(initial_input, config=config):
-                if "messages" in event:
-                    # The final report is typically the last message in the stream.
-                    message = event["messages"][-1]
-                    if message.content:
-                        final_report = message.content
+            day, month, year = map(int, cleaned_parts)
+            date = datetime(year, month, day)
+            # For a single date, we might search for that whole day or a range around it.
+            # For simplicity, let's just format it and let the API decide.
+            # Or, we can create a range for the whole year.
+            return f"01/01/{year}-12/31/{year}"
+        except ValueError:
+            return date_str
             
-            if not final_report:
-                msg = "Deep research did not produce a final report."
-                self._log_activity(msg, details={"level": "error"})
-                return {"error": msg}
+    return date_str # Return original string if format is not recognized
 
-            self._log_activity("Successfully received final report from deep research.")
-            return final_report
-        except Exception as e:
-            error_msg = f"An error occurred during deep research: {e}"
-            self._log_activity(error_msg, details={"level": "error"})
-            return {"error": error_msg}
+async def run_field_researcher(topic: str, report_date: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Runs the field research process.
+    
+    Args:
+        topic: The topic to research.
+        report_date: The date or date range to use for the research.
+        
+    Returns:
+        A dictionary containing the research findings.
+    """
+    print(f"---Running Field Researcher for topic: {topic}---")
+    
+    time_range_for_search = format_date_range(report_date)
+    
+    # 1. Get the deep research agent and its configuration
+    deep_research_agent = get_deep_research_agent()
+    config = WebResearchConfig(time_range=time_range_for_search)
+
+    # 2. Run the deep research to get a report
+    graph_result = await deep_research_agent.ainvoke(
+        {"topic": topic, "report_date": report_date or get_today_str()},
+        config={"configurable": config}
+    )
+    
+    report_content = graph_result.get("final_report")
+    
+    if not report_content:
+        print("---Field Researcher: Deep research did not produce a report.---")
+        return {
+            "error": "Failed to generate a research report.",
+            "structured_data": {},
+            "summary": ""
+        }
+
+    print("---Field Researcher: Report generated, now extracting data...---")
+
+    # 3. Use an LLM to extract structured data from the report
+    llm = get_default_llm()
+    parser = JsonOutputParser(pydantic_object=RealEstateAnalysis)
+    
+    extraction_prompt = FIELD_RESEARCHER_EXTRACTION_PROMPT.format(
+        content=report_content,
+        format_instructions=parser.get_format_instructions()
+    )
+    
+    extraction_response = await llm.ainvoke([HumanMessage(content=extraction_prompt)])
+    
+    try:
+        # The response is expected to be a JSON string
+        structured_data = parser.parse(extraction_response.content)
+    except Exception as e:
+        print(f"---Field Researcher: Failed to parse structured data from report. Error: {e}---")
+        structured_data = {"error": "Failed to parse JSON from the extraction step."}
+
+    print("---Field Researcher: Data extracted, now generating summary...---")
+    
+    # Convert Pydantic model to dict for serialization, handling potential errors
+    structured_data_dict = {}
+    if hasattr(structured_data, 'model_dump'):
+        structured_data_dict = structured_data.model_dump()
+    elif isinstance(structured_data, dict):
+        structured_data_dict = structured_data
+
+    # 4. Use an LLM to generate a final summary
+    summary_prompt = FIELD_RESEARCHER_TREND_SUMMARY_PROMPT.format(numerical_analysis=json.dumps(structured_data_dict, indent=2))
+    
+    summary_response = await llm.ainvoke([HumanMessage(content=summary_prompt)])
+    summary = summary_response.content
+
+    print("---Field Researcher: Process complete.---")
+    
+    return {
+        "structured_data": structured_data_dict,
+        "summary": summary,
+        "full_report": report_content  # Optionally return the full report
+    }
+
 
 if __name__ == '__main__':
-    async def run_field_researcher():
-        """
-        An asynchronous function to run the FieldResearcherAgent for demonstration.
-        """
-        agent = FieldResearcherAgent("researcher_007")
-
-        # Create a dummy work order for a deep dive research task
-        work_order = WorkOrder(
-            order_id="order_123",
-            client_type=ClientType.RESEARCHER,
-            client_persona="A data scientist researching real estate for a personal project.",
-            primary_task=TaskType.DEEP_DIVE_RESEARCH,
-            raw_query="What are the current market trends for residential real estate in Austin, TX?",
-            processed_query="Current market trends for residential real estate in Austin, TX"
-        )
+    # This allows for direct testing of the field researcher agent
+    async def main():
+        topic_to_research = "Real estate investment trends in Tehran"
         
-        print(f"Running Field Researcher for: '{work_order.processed_query}'")
-        # Use the new process_work_order method which invokes the LangGraph workflow
-        result = await agent.process_work_order(work_order)
+        # To test with a specific date range:
+        results = await run_field_researcher(topic_to_research, report_date="21-3-2014 to 21-3-2015")
         
-        print("\n--- Research Result ---")
-        # The final result from `process_work_request` is in the `results` key of the final state
-        print(json.dumps(result.get("results", {}), indent=4))
-        print("---------------------\n")
+        # To test with the default (current) date:
+        # results = await run_field_researcher(topic_to_research)
+        
+        print("\n\n--- Field Researcher Test Results ---")
+        print("Summary:", results.get("summary"))
+        print("\nStructured Data:")
+        # The returned data is already a dict, so it can be directly dumped to JSON
+        print(json.dumps(results.get("structured_data"), indent=2))
+        # print("\nFull Report:", results.get("full_report")) # Uncomment to see the full report
 
-        # You can also inspect the final state
-        print("\n--- Final Workflow State ---")
-        print(f"Status: {result.get('status')}")
-        print(f"Error: {result.get('error')}")
-        print("--------------------------\n")
-
-    # To run the async function, we need an event loop
-    try:
-        asyncio.run(run_field_researcher())
-    except KeyboardInterrupt:
-        print("Field Researcher run interrupted.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-     
+    asyncio.run(main())

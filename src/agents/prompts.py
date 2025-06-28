@@ -18,7 +18,7 @@ Analyze this query and respond with this exact JSON structure (replace values as
 
 {{
     "client_type": "one of: investor, homebuyer, policymaker, developer, researcher",
-    "client_persona": "detailed description of the client based on their query and language",
+    "client_persona": "detailed description of the client based on their query and language, and give the language used",
     "primary_task": "one of: compare_regions, valuate_property, market_analysis, investment_strategy, price_prediction, rent_analysis, policy_impact, scenario_analysis, investment_recommendation, risk_assessment, market_insights, investment_prospects",
     "secondary_tasks": [],
     "processed_query": "cleaned and clarified version of the user's query",
@@ -32,8 +32,13 @@ Analyze this query and respond with this exact JSON structure (replace values as
     "property_specs": {{
         "location": null,
         "property_type": null,
-        "size": null, 
+        "size_sqft": null,
         "price_range": null,
+        "number_of_bedrooms": null,
+        "number_of_bathrooms": null,
+        "amenities": [],
+        "year_built": null,
+        "property_condition": null,
         "special_features": []
     }},
     "urgency_level": "normal",
@@ -53,45 +58,18 @@ Guidelines:
 
 # Field Researcher Agent Prompts
 FIELD_RESEARCHER_EXTRACTION_PROMPT = PromptTemplate(
-    input_variables=["content"],
+    input_variables=["content", "format_instructions"],
     template="""
-You are a real estate data analyst. Extract all numerical data, statistics, and factual information from the following content.
+You are a real estate data analyst. Your task is to extract structured information from the provided content.
 
 Content to analyze:
 {content}
 
-Please provide a JSON response with the following structure:
-{{
-    "prices": {{
-        "average_price_per_sqm": "extracted price if available",
-        "price_range": "price range if available",
-        "price_trend": "increasing/decreasing/stable if mentioned"
-    }},
-    "rental_data": {{
-        "average_rent": "rental price if available",
-        "rental_yield": "rental yield percentage if available",
-        "rental_trend": "trend information if available"
-    }},
-    "market_indicators": {{
-        "transaction_volume": "number of transactions if available",
-        "market_growth": "growth percentage if available",
-        "supply_demand": "supply/demand information if available"
-    }},
-    "economic_factors": {{
-        "inflation_rate": "inflation data if available",
-        "interest_rates": "interest rate data if available",
-        "economic_indicators": ["list of other economic factors mentioned"]
-    }},
-    "geographical_data": {{
-        "location": "specific location mentioned",
-        "district_data": ["district-specific information if available"]
-    }},
-    "time_period": "time period the data refers to",
-    "data_quality": "assessment of data reliability and recency",
-    "key_statistics": ["list of the most important numerical findings"]
-}}
+Please follow these instructions to format your response:
+{format_instructions}
 
-Focus on extracting actual numbers, percentages, and quantifiable data. If no data is available for a category, use null.
+Ensure your output is a valid JSON object that adheres to the specified schema.
+Focus on extracting factual data, trends, and key market indicators.
 """.strip()
 )
 
@@ -113,7 +91,7 @@ Summary:
 
 # Strategy Extraction Agent Prompts
 STRATEGY_EXTRACTION_FACTS_PROMPT = PromptTemplate(
-    input_variables=["client_type", "task"],
+    input_variables=["client_type", "task", "location"],
     template="""
 Extract key facts and market principles for a {client_type} client considering {task}.
 
@@ -128,4 +106,58 @@ Identify specific investment methods, step-by-step strategies, and practical act
 
 Location: {location}
 """.strip()
+)
+
+# Strategic Advisor Agent Prompts
+CHIEF_STRATEGIST_ADVICE_PROMPT = PromptTemplate(
+    input_variables=["client_profile", "market_analysis_summary", "key_market_data", "knowledge_base_strategies", "format_instructions"],
+    template="""
+As a Chief Real Estate Strategist, your task is to provide expert investment advice by synthesizing a client's profile, real-time market analysis, and internal knowledge base strategies.
+
+**Client Profile:**
+{client_profile}
+
+**Real-Time Market Analysis Summary:**
+{market_analysis_summary}
+
+**Key Market Data (from web research):**
+{key_market_data}
+
+**Internal Knowledge Base Strategies:**
+{knowledge_base_strategies}
+
+**Your Task:**
+Synthesize ALL the provided information to generate a clear, actionable, and comprehensive investment strategy. Your advice must integrate insights from both the real-time analysis and the internal knowledge base. Follow the formatting instructions below.
+
+**Formatting Instructions:**
+{format_instructions}
+
+Ensure your advice is practical, data-driven, and directly addresses the client's needs.
+""".strip()
+)
+
+# Generate Report Agent Prompts
+FINAL_REPORT_PROMPT = PromptTemplate(
+    input_variables=["work_order", "strategic_advice"],
+    template="""
+You are a senior real estate analyst tasked with producing a final investment report.
+
+Synthesize the following information into a comprehensive, well-structured report.
+
+**Client Work Order**:
+{work_order}
+
+**Strategic Advice Provided**:
+{strategic_advice}
+
+**Report Structure**:
+1.  **Executive Summary**: A brief overview of the client's request and the key findings.
+2.  **Client Profile & Objectives**: A description of the client and their goals.
+3.  **Market Analysis & Principles**: Based on the strategic advice, summarize the key market principles.
+4.  **Recommended Investment Strategies**: Detail the recommended strategies and methods.
+5.  **Next Steps & Recommendations**: Provide clear, actionable next steps for the client.
+6.  **Disclaimer**: Include a standard disclaimer about market risks.
+
+Produce a professional, client-ready report.
+    """.strip()
 ) 
