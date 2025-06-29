@@ -14,3 +14,11 @@ output/*
 
 # Ignore all files in the output directory
 output/*
+
+.env
+
+# Ignore all files in the output directory
+output/*
+
+# Ignore all files in the output directory
+output/*
