@@ -13,7 +13,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.configs.llm_config import get_default_llm
-from src.agents.prompts import FINAL_REPORT_PROMPT
+from src.agents.prompts import REPORT_PROMPT_MAPPING, CLIENT_PROMPT_MAP, FINAL_REPORT_PROMPT_STANDARD
 from langchain_core.messages import HumanMessage
 
 def format_strategic_advice(advice: Dict[str, Any]) -> str:
@@ -50,11 +50,18 @@ async def run_generate_report_agent(work_order: Dict[str, Any], strategic_advice
     
     llm = get_default_llm()
     
+    # Determine the sophistication level based on client type
+    client_type = work_order.get("client_type", "unknown")
+    sophistication_level = REPORT_PROMPT_MAPPING.get(client_type, "standard")
+    
+    # Select the appropriate prompt
+    final_report_prompt = CLIENT_PROMPT_MAP.get(sophistication_level, FINAL_REPORT_PROMPT_STANDARD)
+
     # Format the structured advice into a readable string
     formatted_advice = format_strategic_advice(strategic_advice)
     
     # Format the prompt with the work order and formatted strategic advice
-    prompt = FINAL_REPORT_PROMPT.format(
+    prompt = final_report_prompt.format(
         work_order=json.dumps(work_order, indent=2),
         strategic_advice=formatted_advice
     )

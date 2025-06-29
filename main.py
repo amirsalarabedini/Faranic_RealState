@@ -59,7 +59,7 @@ async def main(user_query: str, report_date: Optional[str] = None):
 
 if __name__ == "__main__":
     # Example user query
-    query = "I am an investor looking to buy an apartment in Tehran. My budget is around $500,000. I am looking for a 2-bedroom, 2-bathroom apartment with a gym. I prefer a newer building."
+    query = "عوامل کلیدی و تعیین‌کننده در شروع و پایان هر یک از اپیزودهای رونق شدید، رونق اندک، رکود اندک، رکود شدید و چرخش بازار کدامند؟"
 
     # To run with a specific date, uncomment the following line:
     # asyncio.run(main(query, report_date="October 31, 2023"))

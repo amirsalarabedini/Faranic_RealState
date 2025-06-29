@@ -160,4 +160,100 @@ Synthesize the following information into a comprehensive, well-structured repor
 
 Produce a professional, client-ready report.
     """.strip()
-) 
+)
+
+FINAL_REPORT_PROMPT_BASIC = PromptTemplate(
+    input_variables=["work_order", "strategic_advice"],
+    template="""
+You are a friendly real estate assistant. Create a simple and easy-to-understand report for a homebuyer.
+
+**1. What You Asked For:**
+{work_order}
+
+**2. What We Found:**
+{strategic_advice}
+
+**3. What You Should Do Next:**
+- Review the key opportunities and risks.
+- Consider the recommended strategy.
+- Contact us if you have more questions!
+
+**Disclaimer:** Real estate investing has risks. Please do your own research.
+    """.strip()
+)
+
+FINAL_REPORT_PROMPT_STANDARD = PromptTemplate(
+    input_variables=["work_order", "strategic_advice"],
+    template="""
+You are a professional real estate consultant. Generate a standard investment report.
+
+**Client Request Summary**:
+{work_order}
+
+**Strategic Analysis**:
+{strategic_advice}
+
+**Report Outline**:
+1.  **Introduction**: Summary of the client's objectives.
+2.  **Market Overview**: Key findings from our market analysis.
+3.  **Investment Recommendations**: Actionable advice and strategies.
+4.  **Risk Assessment**: Potential risks and mitigation strategies.
+5.  **Conclusion**: Final recommendations and next steps.
+
+**Disclaimer**: This report is for informational purposes only and does not constitute financial advice.
+    """.strip()
+)
+
+FINAL_REPORT_PROMPT_SOPHISTICATED = PromptTemplate(
+    input_variables=["work_order", "strategic_advice"],
+    template="""
+You are a top-tier real estate strategist for institutional clients. Produce a sophisticated, data-driven, and in-depth investment analysis.
+
+**Work Order**: {work_order}
+**Core Strategic Analysis**: {strategic_advice}
+
+**Comprehensive Report Structure**:
+
+**I. Executive Briefing**:
+   - High-level summary of the strategic imperative, core findings, and primary recommendation.
+
+**II. Client Mandate & Profile**:
+   - In-depth analysis of the client's stated and implied objectives, risk tolerance, and investment horizon.
+
+**III. Macro & Micro Market Analysis**:
+   - **Macro-Economic Context**: Relevant economic indicators and their impact on the real estate market.
+   - **Micro-Market Deep Dive**: Granular analysis of the target location, including supply/demand dynamics, demographic trends, and competitive landscape.
+   - **Regulatory & Policy Landscape**: Assessment of current and potential policies affecting the investment.
+
+**IV. Core Investment Thesis & Strategic Recommendations**:
+   - **Investment Thesis**: The central argument for the proposed strategy, supported by data.
+   - **Quantitative Analysis**: Key metrics, financial models (if applicable), and return projections (e.g., ROI, IRR, Cap Rate).
+   - **Scenario Analysis**: Best-case, base-case, and worst-case scenarios.
+   - **Actionable Strategy**: Step-by-step implementation plan.
+
+**V. Risk Matrix & Mitigation**:
+   - **Risk Identification**: A comprehensive list of market, execution, and financial risks.
+   - **Risk Quantification**: Impact and probability assessment for each risk.
+   - **Mitigation Plan**: Specific actions to reduce risk exposure.
+
+**VI. Disclosures & Disclaimers**:
+   - Standard legal and financial disclaimers.
+
+**Directive**: The final report must be of institutional quality, suitable for presentation to an investment committee. It should be analytical, quantitative, and strategically sound.
+    """.strip()
+)
+
+REPORT_PROMPT_MAPPING = {
+    "homebuyer": "basic",
+    "investor": "sophisticated",
+    "policymaker": "sophisticated",
+    "developer": "sophisticated",
+    "researcher": "standard",
+    "unknown": "standard",
+}
+
+CLIENT_PROMPT_MAP = {
+    "basic": FINAL_REPORT_PROMPT_BASIC,
+    "standard": FINAL_REPORT_PROMPT_STANDARD,
+    "sophisticated": FINAL_REPORT_PROMPT_SOPHISTICATED,
+} 
