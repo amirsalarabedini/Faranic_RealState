@@ -28,6 +28,6 @@ streamlit>=1.28.0
 plotly>=5.17.0
 pandas>=2.1.0
 exa_py>=1.0.0
-markdownify>=2.2.1
+markdownify>=1.1.0
 beautifulsoup4>=4.12.0
 tavily-python>=0.3.0
