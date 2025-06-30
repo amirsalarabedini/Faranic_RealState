@@ -14,8 +14,7 @@ if st.button("Generate Report"):
         asyncio.run(run_main_script(user_query))
         
         # Define the absolute path for the report
-        project_root = os.path.dirname(os.path.abspath(__file__))
-        report_path = os.path.join(project_root, "final_investment_report.md")
+        report_path = os.path.join(os.getcwd(), "final_investment_report.md")
         
         # Read the generated report
         try:
