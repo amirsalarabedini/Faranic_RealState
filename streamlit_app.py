@@ -22,4 +22,28 @@ if st.button("Generate Report"):
                 report_content = f.read()
             st.markdown(report_content)
         except FileNotFoundError:
-            st.error(f"Error: The report file was not found at {report_path}. The report generation might have failed.") 
+            st.error(f"Error: The report file was not found at {report_path}. The report generation might have failed.")
+
+st.markdown("---")
+st.subheader("File I/O Test")
+
+if st.button("Create Test File"):
+    test_file_path = os.path.join(os.getcwd(), "test_file.txt")
+    try:
+        with open(test_file_path, "w", encoding="utf-8") as f:
+            f.write("This is a test file created by the Streamlit app.")
+        st.success(f"Test file created at: {test_file_path}")
+    except Exception as e:
+        st.error(f"Failed to create test file: {e}")
+
+if st.button("Read Test File"):
+    test_file_path = os.path.join(os.getcwd(), "test_file.txt")
+    try:
+        with open(test_file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        st.info(f"Content of test file: '{content}'")
+        st.success(f"Successfully read test file from: {test_file_path}")
+    except FileNotFoundError:
+        st.error(f"Test file not found at: {test_file_path}")
+    except Exception as e:
+        st.error(f"Failed to read test file: {e}") 
