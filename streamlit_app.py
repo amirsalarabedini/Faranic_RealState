@@ -1,6 +1,7 @@
 import streamlit as st
 import asyncio
 from main import main as run_main_script
+import os
 
 st.title("Faranic Real Estate Investment Advisor")
 
@@ -12,8 +13,14 @@ if st.button("Generate Report"):
         # We need to run the async main function
         asyncio.run(run_main_script(user_query))
         
+        # Define the absolute path for the report
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        report_path = os.path.join(project_root, "final_investment_report.md")
+        
         # Read the generated report
-        with open("final_investment_report.md", "r", encoding="utf-8") as f:
-            report_content = f.read()
-            
-        st.markdown(report_content) 
+        try:
+            with open(report_path, "r", encoding="utf-8") as f:
+                report_content = f.read()
+            st.markdown(report_content)
+        except FileNotFoundError:
+            st.error(f"Error: The report file was not found at {report_path}. The report generation might have failed.") 

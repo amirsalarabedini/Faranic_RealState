@@ -48,7 +48,7 @@ async def main(user_query: str, report_date: Optional[str] = None):
     final_report = await run_generate_report_agent(work_order, strategic_advice)
 
     # 5. Save the final report
-    report_path = "final_investment_report.md"
+    report_path = os.path.join(project_root, "final_investment_report.md")
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(final_report)
 
