@@ -60,6 +60,11 @@ async def run_generate_report_agent(work_order: Dict[str, Any], strategic_advice
     # Format the structured advice into a readable string
     formatted_advice = format_strategic_advice(strategic_advice)
     
+    # If there's no advice to format, return a message instead of an empty report
+    if not formatted_advice.strip():
+        print("Warning: No strategic advice was formatted. Returning an error report.")
+        return "## Report Generation Failed\n\nWe were unable to generate the report because the strategic analysis returned no actionable advice. Please try refining your query."
+
     # Format the prompt with the work order and formatted strategic advice
     prompt = final_report_prompt.format(
         work_order=json.dumps(work_order, indent=2),
