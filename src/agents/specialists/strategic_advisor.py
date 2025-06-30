@@ -15,14 +15,14 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.configs.llm_config import get_default_llm
-from src.agents.prompts import CHIEF_STRATEGIST_ADVICE_PROMPT
+from src.agents.prompts import CHIEF_STRATEGIST_ADVICE_PROMPT, CHIEF_STRATEGIST_ADVICE_PROMPT_PERSIAN
 from src.agents.specialists.models.strategic_advisor_models import StrategicAdvice
 from src.agents.analysis.field_researcher import run_field_researcher
 from src.agents.analysis.strategy_extraction_from_knowledge_base import extract_investment_strategies
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 
-async def run_strategic_advisor(work_order: Dict[str, Any], report_date: Optional[str] = None) -> Dict[str, Any]:
+async def run_strategic_advisor(work_order: Dict[str, Any], report_date: Optional[str] = None, language: str = "English") -> Dict[str, Any]:
     """
     Runs the strategic advisor agent, which orchestrates field research and knowledge base
     extraction to generate comprehensive investment advice.
@@ -30,6 +30,7 @@ async def run_strategic_advisor(work_order: Dict[str, Any], report_date: Optiona
     Args:
         work_order: The client's work order with their profile and request.
         report_date: The date to be used for all research and reporting. Defaults to current date if None.
+        language: The language to use for the advice prompt. Defaults to "English".
 
     Returns:
         A dictionary containing the strategic advice.
@@ -63,7 +64,12 @@ async def run_strategic_advisor(work_order: Dict[str, Any], report_date: Optiona
     key_market_data = json.dumps(research_findings.get("structured_data", {}), indent=2)
 
     # 4. Generate comprehensive advice using the synthesis prompt
-    advice_prompt = CHIEF_STRATEGIST_ADVICE_PROMPT.format(
+    if language == "Persian":
+        prompt_template = CHIEF_STRATEGIST_ADVICE_PROMPT_PERSIAN
+    else:
+        prompt_template = CHIEF_STRATEGIST_ADVICE_PROMPT
+        
+    advice_prompt = prompt_template.format(
         client_profile=client_profile,
         market_analysis_summary=market_analysis_summary,
         key_market_data=key_market_data,

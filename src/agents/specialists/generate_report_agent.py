@@ -13,7 +13,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.configs.llm_config import get_default_llm
-from src.agents.prompts import REPORT_PROMPT_MAPPING, CLIENT_PROMPT_MAP, FINAL_REPORT_PROMPT_STANDARD
+from src.agents.prompts import REPORT_PROMPT_MAPPING, CLIENT_PROMPT_MAP, FINAL_REPORT_PROMPT_STANDARD, CLIENT_PROMPT_MAP_PERSIAN, FINAL_REPORT_PROMPT_STANDARD_PERSIAN
 from langchain_core.messages import HumanMessage
 
 def format_strategic_advice(advice: Dict[str, Any]) -> str:
@@ -41,7 +41,7 @@ def format_strategic_advice(advice: Dict[str, Any]) -> str:
         
     return "\n\n".join(markdown_sections)
 
-async def run_generate_report_agent(work_order: Dict[str, Any], strategic_advice: Dict[str, Any]) -> str:
+async def run_generate_report_agent(work_order: Dict[str, Any], strategic_advice: Dict[str, Any], language: str = "English") -> str:
     """
     The Generate Report Agent synthesizes findings from all other agents
     into a comprehensive and well-structured final report.
@@ -55,7 +55,14 @@ async def run_generate_report_agent(work_order: Dict[str, Any], strategic_advice
     sophistication_level = REPORT_PROMPT_MAPPING.get(client_type, "standard")
     
     # Select the appropriate prompt
-    final_report_prompt = CLIENT_PROMPT_MAP.get(sophistication_level, FINAL_REPORT_PROMPT_STANDARD)
+    if language == "Persian":
+        prompt_map = CLIENT_PROMPT_MAP_PERSIAN
+        default_prompt = FINAL_REPORT_PROMPT_STANDARD_PERSIAN
+    else:
+        prompt_map = CLIENT_PROMPT_MAP
+        default_prompt = FINAL_REPORT_PROMPT_STANDARD
+
+    final_report_prompt = prompt_map.get(sophistication_level, default_prompt)
 
     # Format the structured advice into a readable string
     formatted_advice = format_strategic_advice(strategic_advice)

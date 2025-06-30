@@ -9,11 +9,11 @@ import json
 import uuid
 from datetime import datetime
 
-from src.agents.prompts import QUERY_UNDERSTANDING_PROMPT
+from src.agents.prompts import QUERY_UNDERSTANDING_PROMPT, QUERY_UNDERSTANDING_PROMPT_PERSIAN
 from langchain_core.messages import HumanMessage
 from src.configs.llm_config import get_default_llm
 
-def run_query_understanding_agent(query: str) -> Dict[str, Any]:
+def run_query_understanding_agent(query: str, language: str = "English") -> Dict[str, Any]:
     """
     The QueryUnderstandingAgent analyzes user queries and creates standardized Work Orders.
     
@@ -25,7 +25,12 @@ def run_query_understanding_agent(query: str) -> Dict[str, Any]:
     """
     llm = get_default_llm()
     
-    prompt = QUERY_UNDERSTANDING_PROMPT.format(user_query=query)
+    if language == "Persian":
+        prompt_template = QUERY_UNDERSTANDING_PROMPT_PERSIAN
+    else:
+        prompt_template = QUERY_UNDERSTANDING_PROMPT
+        
+    prompt = prompt_template.format(user_query=query)
     
     messages = [HumanMessage(content=prompt)]
     
@@ -35,6 +40,7 @@ def run_query_understanding_agent(query: str) -> Dict[str, Any]:
     try:
         # The response might be a string or a message object
         content = llm_response.content if hasattr(llm_response, 'content') else llm_response
+        print(f"---LLM Response Content---\n{content}\n--------------------------")
         json_part = content.split("```json")[1].split("```")[0].strip()
         work_order = json.loads(json_part)
     except (IndexError, json.JSONDecodeError) as e:
