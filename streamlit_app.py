@@ -8,18 +8,26 @@ st.title("Faranic Real Estate Investment Advisor")
 user_query = st.text_area("Enter your investment query:", "عوامل کلیدی و تعیین‌کننده در شروع و پایان هر یک از اپیزودهای رونق شدید، رونق اندک، رکود اندک، رکود شدید و چرخش بازار کدامند؟")
 
 if st.button("Generate Report"):
+    st.subheader("Live Report Generation")
+    report_container = st.empty()
+    
+    # Run the async generator and display the results in a streaming fashion
     with st.spinner("Generating your report, please wait..."):
-        # Run the main script from main.py
-        # We need to run the async main function
-        asyncio.run(run_main_script(user_query))
-        
-        # Define the absolute path for the report
-        report_path = os.path.join(os.getcwd(), "final_investment_report.md")
-        
-        # Read the generated report
         try:
-            with open(report_path, "r", encoding="utf-8") as f:
-                report_content = f.read()
-            st.markdown(report_content)
-        except FileNotFoundError:
-            st.error(f"Error: The report file was not found at {report_path}. The report generation might have failed.") 
+            full_report = []
+            # asyncio.run() is not directly compatible with async generators in this context.
+            # We need to get the event loop and run the async generator to completion.
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            async def stream_report():
+                async for chunk in run_main_script(user_query):
+                    full_report.append(chunk)
+                    report_container.markdown("".join(full_report))
+            
+            loop.run_until_complete(stream_report())
+
+        except Exception as e:
+            st.error(f"An error occurred during report generation: {e}")
+
+    st.success("Report generation complete!") 
