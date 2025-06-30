@@ -22,3 +22,7 @@ output/*
 
 # Ignore all files in the output directory
 output/*
+
+final_investment_report.md
+
+config.toml
