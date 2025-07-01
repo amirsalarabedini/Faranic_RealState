@@ -39,17 +39,13 @@ if st.button("Generate Report"):
     with st.spinner("Generating your report, please wait..."):
         try:
             full_report = []
-            # asyncio.run() is not directly compatible with async generators in this context.
-            # We need to get the event loop and run the async generator to completion.
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
             
             async def stream_report():
                 async for chunk in run_main_script(user_query):
                     full_report.append(chunk)
                     report_container.markdown("".join(full_report))
             
-            loop.run_until_complete(stream_report())
+            asyncio.run(stream_report())
 
         except Exception as e:
             st.error(f"An error occurred during report generation: {e}")
