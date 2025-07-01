@@ -3,6 +3,9 @@ import asyncio
 from main import main as run_main_script
 import os
 import re
+import nest_asyncio
+
+nest_asyncio.apply()
 
 def is_persian(text: str) -> bool:
     """Checks if the text contains Persian characters."""
