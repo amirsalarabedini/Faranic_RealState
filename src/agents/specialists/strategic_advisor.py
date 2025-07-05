@@ -54,14 +54,28 @@ async def run_strategic_advisor(work_order: Dict[str, Any], report_date: Optiona
         f"Property details: {property_details}"
     )
     research_findings = await run_field_researcher(research_topic, report_date)
+    print(f"---Strategic Advisor: Research findings received: {research_findings}---")
 
     # 2. Extract strategies from the internal knowledge base
     knowledge_base_strategies = await extract_investment_strategies(work_order)
+    print(f"---Strategic Advisor: Knowledge base strategies received: {knowledge_base_strategies}---")
 
     # 3. Prepare the inputs for the final synthesis prompt
     client_profile = json.dumps(work_order, indent=2)
     market_analysis_summary = research_findings.get("summary", "No summary available.")
-    key_market_data = json.dumps(research_findings.get("structured_data", {}), indent=2)
+    
+    # Ensure structured_data is always a dictionary before dumping
+    structured_data_to_dump = research_findings.get("structured_data", {})
+    if not isinstance(structured_data_to_dump, dict):
+        print(f"---Strategic Advisor: WARNING: structured_data is not a dictionary. Type: {type(structured_data_to_dump)}. Attempting to convert.---")
+        try:
+            structured_data_to_dump = structured_data_to_dump.model_dump() # For Pydantic models
+        except AttributeError:
+            # If it's not a Pydantic model and not a dict, default to empty dict
+            structured_data_to_dump = {}
+
+    key_market_data = json.dumps(structured_data_to_dump, indent=2)
+    print(f"---Strategic Advisor: Key market data (JSON dumped structured_data): {key_market_data}---")
 
     # 4. Generate comprehensive advice using the synthesis prompt
     if language == "Persian":
@@ -76,14 +90,18 @@ async def run_strategic_advisor(work_order: Dict[str, Any], report_date: Optiona
         knowledge_base_strategies=knowledge_base_strategies,
         format_instructions=parser.get_format_instructions()
     )
+    print(f"---Strategic Advisor: Generated advice prompt (first 500 chars): {advice_prompt[:500]}---")
 
     advice_response = await llm.ainvoke([HumanMessage(content=advice_prompt)])
+    print(f"---Strategic Advisor: LLM advice response received. Content (first 500 chars): {advice_response.content[:500]}---")
     
     try:
         strategic_advice = parser.parse(advice_response.content)
+        print(f"---Strategic Advisor: Successfully parsed strategic advice.---")
     except Exception as e:
         print(f"---Strategic Advisor: Failed to parse JSON from advice response. Error: {e}---")
-        strategic_advice = {"error": "Failed to generate valid JSON advice."}
+        print(f"---Strategic Advisor: Unparsable content: {advice_response.content}---")
+        strategic_advice = {"error": "Failed to generate valid JSON advice.", "exception": str(e)}
 
     print("---Strategic Advisor Finished---")
     return strategic_advice

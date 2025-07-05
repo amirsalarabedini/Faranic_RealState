@@ -102,25 +102,32 @@ async def main(user_query: str, report_date: Optional[str] = None) -> AsyncGener
     
     # 3. Run the Strategic Advisor to get comprehensive advice
     yield "\n---\n### Running Strategic Advisor...\n"
-    strategic_advice = await run_strategic_advisor(work_order, report_date, language)
+    try:
+        strategic_advice = await run_strategic_advisor(work_order, report_date, language)
 
-    if "error" in strategic_advice:
-        error_md = f"**Orchestrator:** Halting workflow due to error from Strategic Advisor: {strategic_advice['error']}"
-        yield error_md
-        return
+        if "error" in strategic_advice:
+            error_md = f"**Orchestrator:** Halting workflow due to error from Strategic Advisor: {strategic_advice['error']}"
+            yield error_md
+            return
 
-    formatted_advice_for_stream = format_strategic_advice(strategic_advice)
-    advice_md = f"#### ✅ Strategic Advice Received\n{formatted_advice_for_stream}"
-    yield advice_md
+        formatted_advice_for_stream = format_strategic_advice(strategic_advice)
+        advice_md = f"#### ✅ Strategic Advice Received\n{formatted_advice_for_stream}"
+        yield advice_md
 
-    # 4. Run the Generate Report Agent to create the final output
-    yield "\n---\n### Generating Final Report...\n"
-    final_report = await run_generate_report_agent(work_order, strategic_advice, language)
-    
-    yield "\n---\n## Final Investment Report\n"
-    yield final_report
+        # 4. Run the Generate Report Agent to create the final output
+        yield "\n---\n### Generating Final Report...\n"
+        final_report = await run_generate_report_agent(work_order, strategic_advice, language)
+        
+        yield "\n---\n## Final Investment Report\n"
+        yield final_report
 
-    yield "\n\n---\n#### ✅ Faranic Real Estate Agent Workflow Complete ---"
+        yield "\n\n---\n#### ✅ Faranic Real Estate Agent Workflow Complete ---"
+    except Exception as e:
+        error_message = f"An unexpected error occurred in the main workflow: {str(e)}"
+        yield f"**Orchestrator Error:** {error_message}\n"
+        # You can also log the full traceback to the terminal for debugging
+        import traceback
+        yield f"```python\n{traceback.format_exc()}\n```"
 
 
 if __name__ == "__main__":
