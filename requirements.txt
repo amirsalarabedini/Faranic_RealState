@@ -31,9 +31,11 @@ exa_py>=1.0.0
 markdownify>=1.1.0
 beautifulsoup4>=4.12.0
 tavily-python>=0.3.0
-uvicorn==0.29.0
+uvicorn>=0.29.0
 watchdog==4.0.1
 webcolors==1.13
 nest_asyncio==1.6.0
-Flask>=2.0.0
+fastapi>=0.104.0
+python-multipart>=0.0.6
 httpx>=0.27.0
+aiohttp>=3.8.0

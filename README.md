@@ -9,6 +9,7 @@ A sophisticated AI-powered real estate investment advisory system that leverages
 - **Real-Time Analysis**: Live web research and market data integration
 - **Knowledge Base Integration**: Leverages internal real estate knowledge and market principles
 - **Interactive Web Interface**: Streamlit-based user interface with live report generation
+- **FastAPI Backend**: RESTful API with comprehensive endpoints for integration
 - **Comprehensive Reports**: Institutional-grade investment analysis reports
 - **Streaming Output**: Real-time report generation with live updates
 
@@ -21,13 +22,19 @@ A sophisticated AI-powered real estate investment advisory system that leverages
    - Handles language detection and processing
    - Manages streaming report generation
 
-2. **Specialized Agents**
+2. **FastAPI Backend** (`backend/app.py`)
+   - RESTful API with comprehensive endpoints
+   - Streaming and synchronous report generation
+   - Report management and retrieval
+   - Interactive API documentation
+
+3. **Specialized Agents**
    - **Query Understanding Agent**: Analyzes user queries and creates structured work orders
    - **Strategic Advisor**: Provides comprehensive investment strategies and market analysis
    - **Generate Report Agent**: Creates professional investment reports
    - **Field Researcher**: Conducts real-time web research for market data
 
-3. **Web Interface** (`streamlit_app.py`)
+4. **Web Interface** (`streamlit_app.py`)
    - Interactive Streamlit application
    - Persian language support with Vazirmatn font
    - Real-time report streaming
@@ -79,7 +86,21 @@ EXA_API_KEY=your_exa_api_key
 
 ### Running the Application
 
-#### Web Interface (Recommended)
+#### FastAPI Backend (Recommended for API Access)
+```bash
+# Using the startup script
+python run_server.py
+
+# Or directly with uvicorn
+uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The FastAPI server will be available at:
+- API Base URL: http://localhost:8000
+- Interactive API Documentation: http://localhost:8000/docs
+- ReDoc Documentation: http://localhost:8000/redoc
+
+#### Web Interface (Recommended for Interactive Use)
 ```bash
 streamlit run streamlit_app.py
 ```
@@ -87,6 +108,110 @@ streamlit run streamlit_app.py
 #### Command Line Interface
 ```bash
 python main.py
+```
+
+## 🔌 API Endpoints
+
+### Core Endpoints
+
+#### Health Check
+```http
+GET /health
+```
+Returns the API health status and version information.
+
+#### Generate Report (Synchronous)
+```http
+POST /generate_report
+Content-Type: application/json
+
+{
+  "query": "What are the key factors for real estate investment in Tehran?",
+  "language": "English",
+  "report_date": "March 21, 2024"
+}
+```
+
+#### Generate Report (Streaming)
+```http
+POST /generate_report_stream
+Content-Type: application/json
+
+{
+  "query": "عوامل کلیدی سرمایه‌گذاری در بازار املاک تهران کدامند؟",
+  "language": "Persian"
+}
+```
+
+#### Report Management
+```http
+GET /reports                    # List all reports
+GET /reports/{report_id}        # Get specific report
+DELETE /reports/{report_id}     # Delete specific report
+```
+
+### API Response Format
+
+#### Success Response
+```json
+{
+  "status": "success",
+  "report_id": "uuid-here",
+  "report": "Generated report content...",
+  "timestamp": "2024-03-21T10:30:00Z"
+}
+```
+
+#### Error Response
+```json
+{
+  "status": "error",
+  "error": "error_code",
+  "message": "Error description",
+  "timestamp": "2024-03-21T10:30:00Z"
+}
+```
+
+### Using the API
+
+#### Python Example
+```python
+import asyncio
+import aiohttp
+
+async def generate_report():
+    async with aiohttp.ClientSession() as session:
+        payload = {
+            "query": "Investment analysis for Tehran real estate",
+            "language": "English"
+        }
+        
+        async with session.post(
+            "http://localhost:8000/generate_report",
+            json=payload
+        ) as response:
+            result = await response.json()
+            print(f"Report ID: {result['report_id']}")
+            print(f"Report: {result['report']}")
+
+# Run the example
+asyncio.run(generate_report())
+```
+
+#### cURL Example
+```bash
+curl -X POST "http://localhost:8000/generate_report" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Real estate investment opportunities in Tehran",
+    "language": "English"
+  }'
+```
+
+#### Test the API
+```bash
+# Run the example client
+python example_client.py
 ```
 
 ## 📊 Usage Examples
@@ -116,7 +241,11 @@ python main.py
 Faranic_RealState/
 ├── main.py                 # Main orchestrator
 ├── streamlit_app.py        # Web interface
+├── run_server.py           # FastAPI server startup script
+├── example_client.py       # API usage examples
 ├── requirements.txt        # Dependencies
+├── backend/
+│   └── app.py             # FastAPI backend implementation
 ├── src/
 │   ├── agents/
 │   │   ├── specialists/    # Core agent implementations
@@ -138,9 +267,11 @@ The system uses various configuration files and environment variables:
 - **Search APIs**: Tavily, Exa, and other search services
 - **Knowledge Base**: FAISS vector database for document retrieval
 - **Language Support**: Automatic language detection and processing
+- **FastAPI Settings**: Host, port, and CORS configuration
 
 ## 📈 Key Technologies
 
+- **FastAPI**: Modern, fast web framework for building APIs
 - **LangChain**: Framework for building AI applications
 - **LangGraph**: Multi-agent orchestration
 - **Streamlit**: Web interface framework
@@ -148,6 +279,7 @@ The system uses various configuration files and environment variables:
 - **OpenAI**: Primary language model
 - **Pydantic**: Data validation and serialization
 - **AsyncIO**: Asynchronous processing
+- **Uvicorn**: ASGI server for FastAPI
 
 ## 🌍 Language Support
 
