@@ -77,8 +77,10 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-gray-50 font-sans">
       <div className="w-full max-w-4xl">
         <header className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800">تحلیل  فرانیک</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800" dir="rtl">
+            تحلیل فرانیک
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2" dir="rtl">
             هوشمندترین دستیار شما در تحلیل بازار املاک و مستغلات
           </p>
         </header>
@@ -90,11 +92,13 @@ export default function Home() {
             placeholder="پرس و جوی خود را در اینجا وارد کنید... (مثلاً 'تحلیل بازار مسکن در تهران')"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            dir="rtl"
           />
           <Button
             className="mt-4 w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-blue-400 disabled:cursor-not-allowed transition-all duration-300 ease-in-out"
             onClick={handleGenerateReport}
             disabled={isLoading || !query}
+            dir="rtl"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
@@ -121,16 +125,16 @@ export default function Home() {
           <div className="prose prose-lg max-w-none mt-8 bg-white p-4 sm:p-8 rounded-lg shadow-lg" dir="rtl">
             <ReactMarkdown
               components={{
-                p: (props) => <p dir="auto" {...props} />,
-                h1: (props) => <h1 dir="auto" {...props} />,
-                h2: (props) => <h2 dir="auto" {...props} />,
-                h3: (props) => <h3 dir="auto" {...props} />,
-                h4: (props) => <h4 dir="auto" {...props} />,
-                h5: (props) => <h5 dir="auto" {...props} />,
-                h6: (props) => <h6 dir="auto" {...props} />,
-                li: (props) => <li dir="auto" {...props} />,
-                th: (props) => <th dir="auto" {...props} />,
-                td: (props) => <td dir="auto" {...props} />,
+                p: (props) => <p dir="rtl" {...props} />,
+                h1: (props) => <h1 dir="rtl" {...props} />,
+                h2: (props) => <h2 dir="rtl" {...props} />,
+                h3: (props) => <h3 dir="rtl" {...props} />,
+                h4: (props) => <h4 dir="rtl" {...props} />,
+                h5: (props) => <h5 dir="rtl" {...props} />,
+                h6: (props) => <h6 dir="rtl" {...props} />,
+                li: (props) => <li dir="rtl" {...props} />,
+                th: (props) => <th dir="rtl" {...props} />,
+                td: (props) => <td dir="rtl" {...props} />,
               }}
             >
               {report}
@@ -144,6 +148,7 @@ export default function Home() {
               variant="ghost"
               className="text-blue-600 hover:text-blue-800"
               onClick={() => setShowSampleQuestions(!showSampleQuestions)}
+              dir="rtl"
             >
               {showSampleQuestions ? "مخفی کردن سوالات نمونه" : "نمایش سوالات نمونه"}
             </Button>
@@ -152,7 +157,7 @@ export default function Home() {
 
         {showSampleQuestions && !isLoading && (
           <div className="mt-8 sm:mt-10">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700 text-center">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700 text-center" dir="rtl">
               یا از سوالات نمونه انتخاب کنید
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -164,6 +169,7 @@ export default function Home() {
                     setQuery(q);
                     setShowSampleQuestions(false);
                   }}
+                  dir="rtl"
                 >
                   <p className="text-xs sm:text-sm text-gray-800">{q}</p>
                 </div>
